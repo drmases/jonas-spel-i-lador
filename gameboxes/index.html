@@ -244,13 +244,20 @@ function allGames() {
   const map = new Map();
   seed.forEach((g, i) => map.set('seed_' + i, {...g}));
   overrides.forEach(o => {
+    let found = false;
+    // Match by EAN first
     if (o.ean) {
-      // Find by EAN in seed
-      let found = false;
       for (const [k, v] of map) { if (v.ean === o.ean) { map.set(k, {...v, ...o}); found = true; break; } }
-      if (!found) map.set('override_' + o.ean, o);
-    } else if (o._id) {
-      map.set('override_' + o._id, o);
+    }
+    // Fall back to name match (handles adding EAN to a seed entry with ean:null)
+    if (!found && o.namn) {
+      for (const [k, v] of map) {
+        if (v.namn.toLowerCase() === o.namn.toLowerCase()) { map.set(k, {...v, ...o}); found = true; break; }
+      }
+    }
+    if (!found) {
+      const key = o.ean ? 'override_' + o.ean : o._id ? 'override_' + o._id : 'override_' + Math.random();
+      map.set(key, o);
     }
   });
   return [...map.values()];
