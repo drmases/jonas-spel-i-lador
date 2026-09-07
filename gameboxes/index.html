@@ -295,18 +295,34 @@ function statusBadge(status) {
 function gameCard(g, showEdit = false) {
   const sub = g.ean ? `EAN: ${g.ean}` : '';
   const badge = statusBadge(g.status);
-  const editBtn = showEdit
-    ? `<button class="edit-btn" onclick="editGame(${JSON.stringify(g).replace(/"/g,'&quot;')})">Redigera</button>`
-    : '';
+  let btn = '';
+  if (showEdit) {
+    btn = `<button class="edit-btn" onclick="editGame(${JSON.stringify(g).replace(/"/g,'&quot;')})">Redigera</button>`;
+  } else if (!g.ean) {
+    btn = `<button class="edit-btn" onclick="addEan(${JSON.stringify(g).replace(/"/g,'&quot;')})">+ EAN</button>`;
+  }
   return `<div class="game-card">
     <div class="game-card-box">${g.låda}</div>
     <div class="game-card-info">
       <div class="game-card-name">${g.namn}</div>
       <div class="game-card-sub">${boxLabel(g.låda)} ${badge} ${sub}</div>
     </div>
-    ${editBtn}
+    ${btn}
   </div>`;
 }
+
+window.addEan = function(g) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="add"]').classList.add('active');
+  document.getElementById('panel-add').classList.add('active');
+  document.getElementById('form-ean').value = '';
+  document.getElementById('form-name').value = g.namn;
+  document.getElementById('form-box').value = g.låda || '';
+  document.getElementById('form-status').value = g.status || '';
+  document.getElementById('form-ean').focus();
+  document.getElementById('form-ean').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -420,7 +436,7 @@ searchInput.addEventListener('input', () => {
     resultsEl.innerHTML = '<div id="no-results">Inget spel hittades.</div>';
     return;
   }
-  resultsEl.innerHTML = games.map(g => gameCard(g, false)).join('');
+  resultsEl.innerHTML = games.map(g => gameCard(g)).join('');
 });
 
 // ── Add / Edit ────────────────────────────────────────────────────────────────
