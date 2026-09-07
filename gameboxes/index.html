@@ -165,7 +165,8 @@
   </div>
   <div class="form-group">
     <label>Spelnamn</label>
-    <input class="field" id="form-name" type="text" placeholder="Spelets namn">
+    <input class="field" id="form-name" type="text" placeholder="Spelets namn" autocomplete="off" list="name-suggestions">
+    <datalist id="name-suggestions"></datalist>
   </div>
   <div class="form-group">
     <label>Låda</label>
@@ -455,6 +456,29 @@ document.getElementById('form-save').addEventListener('click', () => {
 });
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
+
+// Populate datalist and auto-fill box when name matches
+(function() {
+  const dl = document.getElementById('name-suggestions');
+  allGames().forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.namn;
+    dl.appendChild(opt);
+  });
+
+  document.getElementById('form-name').addEventListener('input', function() {
+    const val = this.value.trim().toLowerCase();
+    if (!val) return;
+    const match = allGames().find(g => g.namn.toLowerCase() === val);
+    if (match) {
+      document.getElementById('form-box').value = match.låda || '';
+      document.getElementById('form-status').value = match.status || '';
+      if (!document.getElementById('form-ean').value && match.ean) {
+        document.getElementById('form-ean').value = match.ean;
+      }
+    }
+  });
+})();
 
 function clearForm() {
   ['form-ean','form-name'].forEach(id => document.getElementById(id).value = '');
