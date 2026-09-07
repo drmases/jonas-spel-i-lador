@@ -457,19 +457,29 @@ document.getElementById('form-save').addEventListener('click', () => {
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
-// Populate datalist and auto-fill box when name matches
+// Autocomplete with partial match and auto-fill
 (function() {
   const dl = document.getElementById('name-suggestions');
-  allGames().forEach(g => {
-    const opt = document.createElement('option');
-    opt.value = g.namn;
-    dl.appendChild(opt);
-  });
+  const nameInput = document.getElementById('form-name');
 
-  document.getElementById('form-name').addEventListener('input', function() {
-    const val = this.value.trim().toLowerCase();
+  function updateSuggestions(val) {
+    dl.innerHTML = '';
     if (!val) return;
-    const match = allGames().find(g => g.namn.toLowerCase() === val);
+    const lower = val.toLowerCase();
+    allGames()
+      .filter(g => g.namn.toLowerCase().includes(lower))
+      .slice(0, 10)
+      .forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.namn;
+        dl.appendChild(opt);
+      });
+  }
+
+  nameInput.addEventListener('input', function() {
+    const val = this.value.trim();
+    updateSuggestions(val);
+    const match = allGames().find(g => g.namn.toLowerCase() === val.toLowerCase());
     if (match) {
       document.getElementById('form-box').value = match.låda || '';
       document.getElementById('form-status').value = match.status || '';
