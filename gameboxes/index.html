@@ -204,11 +204,14 @@
     </select>
   </div>
   <button class="btn" id="form-save">Spara</button>
-  <button class="btn btn-secondary" id="form-clear" style="margin-top:8px">Rensa</button>
+  <button class="btn btn-secondary" id="form-clear" style="margin-top:8px">Rensa formulär</button>
 
   <hr class="divider">
   <div id="game-list-header"></div>
   <div id="all-games-list"></div>
+
+  <hr class="divider">
+  <button class="btn btn-secondary" id="clear-storage-btn" style="width:100%;color:#c0392b;border-color:#c0392b">Rensa all sparad data (EAN-koder)</button>
 </div>
 
 <!-- TAB BAR -->
@@ -479,6 +482,14 @@ document.getElementById('form-save').addEventListener('click', () => {
 });
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
+
+document.getElementById('clear-storage-btn').addEventListener('click', () => {
+  if (confirm('Radera alla sparade EAN-koder? Detta går inte att ångra.')) {
+    localStorage.removeItem('gameboxes_overrides');
+    renderAllGames();
+    alert('All sparad data raderad.');
+  }
+});
 
 // Autocomplete with partial match and auto-fill
 (function() {
