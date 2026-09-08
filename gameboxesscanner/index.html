@@ -143,7 +143,7 @@
   <div id="reader">
     <button class="btn" id="capture-btn" style="font-size:18px;padding:22px">📷 Ta foto av streckkoden</button>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stor och skarp i bild.
+      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v4)</span>
     </p>
     <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
   </div>
@@ -384,7 +384,7 @@ function canvasToFile(canvas) {
 async function photoVariants(file) {
   const img = await loadImage(file);
   const W = img.naturalWidth, H = img.naturalHeight;
-  const MAX = 1400;
+  const MAX = 2000;
   const canvases = [];
 
   const add = (frac, rotate) => {
@@ -417,8 +417,9 @@ async function photoVariants(file) {
 function decodeOne(file) {
   const el = document.createElement('div');
   el.id = 'decode-scratch-' + Math.random().toString(36).slice(2);
-  // Must have real dimensions — the decoder sizes its canvas from the container.
-  el.style.cssText = 'position:absolute;left:-10000px;top:0;width:800px;height:800px;';
+  // Must have real dimensions — the decoder scales the image down to fit this
+  // container, and a barcode squeezed to a few hundred pixels is unreadable.
+  el.style.cssText = 'position:absolute;left:-10000px;top:0;width:2000px;height:2000px;';
   document.body.appendChild(el);
   const reader = new Html5Qrcode(el.id, { formatsToSupport: BARCODE_FORMATS, verbose: false });
   return reader.scanFile(file, false)

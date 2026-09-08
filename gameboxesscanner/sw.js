@@ -1,4 +1,4 @@
-const CACHE = 'gameboxesscanner-v3';
+const CACHE = 'gameboxesscanner-v4';
 const ASSETS = [
   '/gameboxesscanner/',
   '/gameboxesscanner/index.html',
@@ -21,8 +21,15 @@ self.addEventListener('activate', e => {
   );
 });
 
+// Network first: always take a fresh copy when online, fall back to cache
+// offline. Cache-first meant deployed fixes could sit unseen for days.
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    fetch(e.request).then(res => {
+      const copy = res.clone();
+      caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+      return res;
+    }).catch(() => caches.match(e.request))
   );
 });
