@@ -356,14 +356,84 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // ── Scanner (photo based — works reliably on iOS) ─────────────────────────────
 // Decodes a barcode from a photo the native camera app captured.
-function decodePhoto(file) {
+const BARCODE_FORMATS = [
+  Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+  Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+  Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION, Html5QrcodeSupportedFormats.CODE_128,
+];
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+    img.src = url;
+  });
+}
+
+function canvasToFile(canvas) {
+  return new Promise(resolve =>
+    canvas.toBlob(b => resolve(new File([b], 'scan.png', { type: 'image/png' })), 'image/png')
+  );
+}
+
+// A phone photo is far bigger than the decoder wants, and the barcode is often a
+// small part of it. Produce progressively tighter centre crops plus a rotated
+// pass, so a code that fails wide can still be read.
+async function photoVariants(file) {
+  const img = await loadImage(file);
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const MAX = 1400;
+  const canvases = [];
+
+  const add = (frac, rotate) => {
+    const sw = W * frac, sh = H * frac;
+    const sx = (W - sw) / 2, sy = (H - sh) / 2;
+    const scale = Math.min(1, MAX / Math.max(sw, sh));
+    const w = Math.round(sw * scale), h = Math.round(sh * scale);
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    if (rotate) {
+      c.width = h; c.height = w;
+      ctx.translate(h / 2, w / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(img, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
+    } else {
+      c.width = w; c.height = h;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+    }
+    canvases.push(c);
+  };
+
+  add(1, false);
+  add(0.6, false);
+  add(0.35, false);
+  add(1, true);
+
+  return Promise.all(canvases.map(canvasToFile));
+}
+
+function decodeOne(file) {
   const el = document.createElement('div');
-  el.style.display = 'none';
+  el.id = 'decode-scratch-' + Math.random().toString(36).slice(2);
+  // Must have real dimensions — the decoder sizes its canvas from the container.
+  el.style.cssText = 'position:absolute;left:-10000px;top:0;width:800px;height:800px;';
   document.body.appendChild(el);
-  el.id = 'decode-scratch-' + Date.now();
-  const reader = new Html5Qrcode(el.id);
+  const reader = new Html5Qrcode(el.id, { formatsToSupport: BARCODE_FORMATS, verbose: false });
   return reader.scanFile(file, false)
     .finally(() => { try { reader.clear(); } catch {} el.remove(); });
+}
+
+async function decodePhoto(file, onProgress) {
+  const variants = await photoVariants(file);
+  for (let i = 0; i < variants.length; i++) {
+    if (onProgress) onProgress(i + 1, variants.length);
+    try {
+      return await decodeOne(variants[i]);
+    } catch {}
+  }
+  throw new Error('no barcode found');
 }
 
 function initScanner() {
@@ -381,7 +451,7 @@ function initScanner() {
     btn.disabled = true;
     btn.textContent = 'Läser av…';
     try {
-      const ean = await decodePhoto(file);
+      const ean = await decodePhoto(file, (i, n) => { btn.textContent = `Läser av… ${i}/${n}`; });
       handleScanResult(ean);
     } catch {
       const resultEl = document.getElementById('scan-result');
