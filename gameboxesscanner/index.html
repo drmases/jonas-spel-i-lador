@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gameboxes</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c9973a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root {
+    --bg: #0e0c09;
+    --surface: #1a1610;
+    --border: #3a2e1e;
+    --accent: #c9973a;
+    --text: #e8dcc8;
+    --muted: #8a7a64;
+    --full: #7a3a3a;
+    --luft: #3a5a3a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+  body { display: flex; flex-direction: column; }
+
+  /* Tab bar */
+  #tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; background: var(--surface); border-top: 1px solid var(--border);
+    z-index: 100; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab-btn {
+    flex: 1; padding: 12px 8px 10px; background: none; border: none;
+    color: var(--muted); font-size: 11px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-height: 56px; transition: color 0.15s;
+  }
+  .tab-btn .icon { font-size: 22px; }
+  .tab-btn.active { color: var(--accent); }
+
+  /* Panels */
+  .panel {
+    flex: 1; overflow-y: auto;
+    padding: 16px 16px calc(72px + env(safe-area-inset-bottom)) 16px;
+    display: none;
+  }
+  .panel.active { display: block; }
+
+  h1 { color: var(--accent); font-size: 20px; margin-bottom: 16px; font-weight: 700; letter-spacing: 0.02em; }
+
+  /* Scanner */
+  #reader { width: 100%; background: #000; }
+  #scan-result { display: none; }
+  .result-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; text-align: center; margin-top: 16px;
+  }
+  .result-box {
+    font-size: 64px; font-weight: 900; color: var(--accent);
+    line-height: 1; letter-spacing: -0.02em;
+  }
+  .result-name { font-size: 20px; margin-top: 8px; color: var(--text); }
+  .badge {
+    display: inline-block; padding: 4px 12px; border-radius: 100px;
+    font-size: 13px; font-weight: 600; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .badge-full { background: var(--full); color: #ffb3b3; }
+  .badge-luft { background: var(--luft); color: #b3ffb3; }
+  .badge-null { background: var(--border); color: var(--muted); }
+  .btn {
+    display: block; width: 100%; padding: 14px; margin-top: 16px;
+    background: var(--accent); color: var(--bg); border: none;
+    border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer;
+    min-height: 48px; transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-secondary {
+    background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
+  }
+
+  /* Unknown form */
+  #unknown-form { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
+  #unknown-form p { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+
+  /* Search */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-input {
+    width: 100%; padding: 14px 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text); font-size: 16px; outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* Game cards */
+  .game-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .game-card-box {
+    font-size: 22px; font-weight: 900; color: var(--accent);
+    min-width: 48px; text-align: center; letter-spacing: -0.02em;
+  }
+  .game-card-info { flex: 1; min-width: 0; }
+  .game-card-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .game-card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .edit-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    min-height: 36px; transition: border-color 0.15s, color 0.15s;
+  }
+  .edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Form */
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  .field {
+    width: 100%; padding: 13px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 16px; outline: none; -webkit-appearance: none;
+  }
+  .field:focus { border-color: var(--accent); }
+  select.field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a7a64' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .ean-row { display: flex; gap: 8px; }
+  .ean-row .field { flex: 1; }
+  .scan-mini-btn {
+    padding: 13px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--accent); cursor: pointer; font-size: 20px;
+    min-height: 48px; transition: border-color 0.15s;
+  }
+  .scan-mini-btn:hover { border-color: var(--accent); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  #game-list-header { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  #no-results { color: var(--muted); text-align: center; padding: 32px; }
+</style>
+</head>
+<body>
+
+<!-- SCAN PANEL -->
+<div class="panel active" id="panel-scan">
+  <h1>Skanna spel</h1>
+  <div id="reader"></div>
+  <div id="scan-result"></div>
+</div>
+
+<!-- SEARCH PANEL -->
+<div class="panel" id="panel-search">
+  <h1>Sök spel</h1>
+  <div class="search-wrap">
+    <input class="search-input" id="search-input" type="search" placeholder="Spelnamn…" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div id="search-results"></div>
+</div>
+
+<!-- ADD/EDIT PANEL -->
+<div class="panel" id="panel-add">
+  <h1>Lägg till / Redigera</h1>
+  <div class="form-group">
+    <label>EAN-kod</label>
+    <div class="ean-row">
+      <input class="field" id="form-ean" type="text" placeholder="Skanna eller skriv…" inputmode="numeric">
+      <button class="scan-mini-btn" id="form-scan-btn" title="Skanna EAN">📷</button>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Spelnamn</label>
+    <input class="field" id="form-name" type="text" placeholder="Spelets namn" autocomplete="off" list="name-suggestions">
+    <datalist id="name-suggestions"></datalist>
+  </div>
+  <div class="form-group">
+    <label>Låda</label>
+    <select class="field" id="form-box">
+      <option value="">Välj låda…</option>
+      <option value="A">Låda A</option>
+      <option value="B">Låda B</option>
+      <option value="C">Låda C</option>
+      <option value="D">Låda D</option>
+      <option value="E">Låda E</option>
+      <option value="F">Låda F</option>
+      <option value="G">Låda G</option>
+      <option value="H">Låda H</option>
+      <option value="I">Låda I</option>
+      <option value="J1">Låda J1</option>
+      <option value="J2">Låda J2</option>
+      <option value="K">Låda K</option>
+      <option value="L">Låda L</option>
+      <option value="M">Låda M</option>
+      <option value="N">Låda N</option>
+      <option value="O">Låda O</option>
+      <option value="P">Låda P</option>
+      <option value="Q">Låda Q</option>
+      <option value="R">Låda R</option>
+      <option value="S">Låda S</option>
+      <option value="Garderob">Garderob</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Status</label>
+    <select class="field" id="form-status">
+      <option value="">–</option>
+      <option value="full">Full</option>
+      <option value="luft">Luft</option>
+    </select>
+  </div>
+  <button class="btn" id="form-save">Spara</button>
+  <button class="btn btn-secondary" id="form-clear" style="margin-top:8px">Rensa formulär</button>
+
+  <hr class="divider">
+  <div id="game-list-header"></div>
+  <div id="all-games-list"></div>
+
+  <hr class="divider">
+  <button class="btn btn-secondary" id="clear-storage-btn" style="width:100%;color:#c0392b;border-color:#c0392b">Rensa all sparad data (EAN-koder)</button>
+</div>
+
+<!-- TAB BAR -->
+<nav id="tabbar">
+  <button class="tab-btn active" data-panel="scan">
+    <span class="icon">📷</span>Skanna
+  </button>
+  <button class="tab-btn" data-panel="search">
+    <span class="icon">🔍</span>Sök
+  </button>
+  <button class="tab-btn" data-panel="add">
+    <span class="icon">➕</span>Lägg till
+  </button>
+</nav>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="games.js"></script>
+<script>
+// ── Data layer ──────────────────────────────────────────────────────────────
+const LS_KEY = 'gameboxes_overrides';
+
+function loadOverrides() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+}
+function saveOverrides(arr) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch {}
+}
+
+function allGames() {
+  const seed = window.GAMES || [];
+  const overrides = loadOverrides();
+  // Merge: overrides by EAN (if set) or treated as additions
+  const map = new Map();
+  seed.forEach((g, i) => map.set('seed_' + i, {...g}));
+  overrides.forEach(o => {
+    let found = false;
+    // Match by EAN first
+    if (o.ean) {
+      for (const [k, v] of map) { if (v.ean === o.ean) { map.set(k, {...v, ...o}); found = true; break; } }
+    }
+    // Fall back to name match (handles adding EAN to a seed entry with ean:null)
+    if (!found && o.namn) {
+      for (const [k, v] of map) {
+        if (v.namn.toLowerCase() === o.namn.toLowerCase()) { map.set(k, {...v, ...o}); found = true; break; }
+      }
+    }
+    if (!found) {
+      const key = o.ean ? 'override_' + o.ean : o._id ? 'override_' + o._id : 'override_' + Math.random();
+      map.set(key, o);
+    }
+  });
+  return [...map.values()];
+}
+
+function findByEan(ean) {
+  const overrides = loadOverrides();
+  const fromOverride = overrides.find(o => o.ean === ean);
+  if (fromOverride) return fromOverride;
+  return (window.GAMES || []).find(g => g.ean === ean) || null;
+}
+
+function upsertOverride(game) {
+  const overrides = loadOverrides();
+  if (game.ean) {
+    const idx = overrides.findIndex(o => o.ean === game.ean);
+    if (idx >= 0) overrides[idx] = game; else overrides.push(game);
+  } else {
+    if (game._id) {
+      const idx = overrides.findIndex(o => o._id === game._id);
+      if (idx >= 0) overrides[idx] = game; else overrides.push(game);
+    } else {
+      game._id = Date.now().toString(36);
+      overrides.push(game);
+    }
+  }
+  saveOverrides(overrides);
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function boxLabel(låda) {
+  return låda === 'Garderob' ? 'Garderob' : 'Låda ' + låda;
+}
+
+function statusBadge(status) {
+  if (!status) return '';
+  const cls = status === 'full' ? 'badge-full' : status === 'luft' ? 'badge-luft' : 'badge-null';
+  const label = status === 'full' ? 'Full' : 'Luft';
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function gameCard(g, showEdit = false) {
+  const sub = g.ean ? `EAN: ${g.ean}` : '';
+  const badge = statusBadge(g.status);
+  let btn = '';
+  if (showEdit) {
+    btn = `<button class="edit-btn" onclick="editGame(${JSON.stringify(g).replace(/"/g,'&quot;')})">Redigera</button>`;
+  } else if (!g.ean) {
+    btn = `<button class="edit-btn" onclick="addEan(${JSON.stringify(g).replace(/"/g,'&quot;')})">+ EAN</button>`;
+  }
+  return `<div class="game-card">
+    <div class="game-card-box">${g.låda}</div>
+    <div class="game-card-info">
+      <div class="game-card-name">${g.namn}</div>
+      <div class="game-card-sub">${boxLabel(g.låda)} ${badge} ${sub}</div>
+    </div>
+    ${btn}
+  </div>`;
+}
+
+window.addEan = function(g) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="add"]').classList.add('active');
+  document.getElementById('panel-add').classList.add('active');
+  document.getElementById('form-ean').value = '';
+  document.getElementById('form-name').value = g.namn;
+  document.getElementById('form-box').value = g.låda || '';
+  document.getElementById('form-status').value = g.status || '';
+  document.getElementById('form-ean').focus();
+  document.getElementById('form-ean').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const panel = btn.dataset.panel;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + panel).classList.add('active');
+    if (panel === 'scan' && !scannerRunning) initScanner();
+    if (panel === 'add') renderAllGames();
+    if (panel === 'search') document.getElementById('search-input').focus();
+  });
+});
+
+// ── Scanner ───────────────────────────────────────────────────────────────────
+let scanner = null;
+let scannerRunning = false;
+let miniScanner = null;
+
+function initScanner(targetElementId = 'reader', onSuccess = handleScanResult) {
+  if (scanner) { try { scanner.stop(); } catch {} scanner = null; }
+  scannerRunning = false;
+  const el = document.getElementById(targetElementId);
+  if (!el) return;
+  el.innerHTML = '';
+  scanner = new Html5Qrcode(targetElementId);
+  scanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 240, height: 120 }, formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128,
+    ]},
+    onSuccess,
+    () => {}
+  ).then(() => { scannerRunning = true; }).catch(err => {
+    el.innerHTML = `<p style="color:var(--muted);padding:24px;text-align:center">Kamera ej tillgänglig: ${err}</p>`;
+  });
+}
+
+function handleScanResult(ean) {
+  if (!scannerRunning) return;
+  // Pause scanning
+  try { scanner.pause(); } catch {}
+
+  const game = findByEan(ean);
+  const resultEl = document.getElementById('scan-result');
+  resultEl.style.display = 'block';
+
+  if (game) {
+    resultEl.innerHTML = `
+      <div class="result-card">
+        <div class="result-box">${game.låda}</div>
+        <div class="result-name">${game.namn}</div>
+        <div>${statusBadge(game.status) || '<span class="badge badge-null">Okänd status</span>'}</div>
+        <div style="margin-top:6px;font-size:13px;color:var(--muted)">${boxLabel(game.låda)}</div>
+        <button class="btn" style="margin-top:20px" onclick="resumeScan()">Skanna igen</button>
+      </div>`;
+  } else {
+    resultEl.innerHTML = `
+      <div class="result-card">
+        <div style="font-size:18px;font-weight:700;color:var(--muted)">Okänd kod</div>
+        <div style="font-size:14px;color:var(--muted);margin-top:4px">${ean}</div>
+        <div id="unknown-form">
+          <p>Vill du lägga till spelet?</p>
+          <div class="form-group">
+            <label>Spelnamn</label>
+            <input class="field" id="quick-name" type="text" placeholder="Spelets namn">
+          </div>
+          <div class="form-group">
+            <label>Låda</label>
+            <select class="field" id="quick-box">
+              <option value="">Välj låda…</option>
+              ${['A','B','C','D','E','F','G','H','I','J1','J2','K','L','M','N','O','P','Q','R','S','Garderob']
+                .map(b => `<option value="${b}">${b === 'Garderob' ? 'Garderob' : 'Låda ' + b}</option>`).join('')}
+            </select>
+          </div>
+          <button class="btn" onclick="quickSave('${ean}')">Spara</button>
+        </div>
+        <button class="btn btn-secondary" style="margin-top:8px" onclick="resumeScan()">Skanna igen</button>
+      </div>`;
+  }
+}
+
+function resumeScan() {
+  document.getElementById('scan-result').style.display = 'none';
+  document.getElementById('scan-result').innerHTML = '';
+  try { scanner.resume(); } catch { initScanner(); }
+}
+
+function quickSave(ean) {
+  const name = document.getElementById('quick-name').value.trim();
+  const box = document.getElementById('quick-box').value;
+  if (!name || !box) { alert('Fyll i namn och låda.'); return; }
+  upsertOverride({ ean, namn: name, låda: box, status: null });
+  // Show result
+  handleScanResult(ean);
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const searchInput = document.getElementById('search-input');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  const resultsEl = document.getElementById('search-results');
+  if (!q) { resultsEl.innerHTML = ''; return; }
+  const games = allGames().filter(g => g.namn.toLowerCase().includes(q));
+  if (!games.length) {
+    resultsEl.innerHTML = '<div id="no-results">Inget spel hittades.</div>';
+    return;
+  }
+  resultsEl.innerHTML = games.map(g => gameCard(g)).join('');
+});
+
+// ── Add / Edit ────────────────────────────────────────────────────────────────
+function renderAllGames() {
+  const games = allGames();
+  document.getElementById('game-list-header').textContent = `${games.length} spel i samlingen`;
+  document.getElementById('all-games-list').innerHTML = games.map(g => gameCard(g, true)).join('');
+}
+
+window.editGame = function(g) {
+  document.getElementById('form-ean').value = g.ean || '';
+  document.getElementById('form-name').value = g.namn || '';
+  document.getElementById('form-box').value = g.låda || '';
+  document.getElementById('form-status').value = g.status || '';
+  // Switch to add tab
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="add"]').classList.add('active');
+  document.getElementById('panel-add').classList.add('active');
+  document.getElementById('form-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+document.getElementById('form-save').addEventListener('click', () => {
+  const ean = document.getElementById('form-ean').value.trim() || null;
+  const name = document.getElementById('form-name').value.trim();
+  const box = document.getElementById('form-box').value;
+  const status = document.getElementById('form-status').value || null;
+  if (!name || !box) { alert('Namn och låda krävs.'); return; }
+  upsertOverride({ ean, namn: name, låda: box, status });
+  clearForm();
+  renderAllGames();
+  alert('Sparat!');
+});
+
+document.getElementById('form-clear').addEventListener('click', clearForm);
+
+document.getElementById('clear-storage-btn').addEventListener('click', () => {
+  if (confirm('Radera alla sparade EAN-koder? Detta går inte att ångra.')) {
+    localStorage.removeItem('gameboxes_overrides');
+    renderAllGames();
+    alert('All sparad data raderad.');
+  }
+});
+
+// Autocomplete with partial match and auto-fill
+(function() {
+  const dl = document.getElementById('name-suggestions');
+  const nameInput = document.getElementById('form-name');
+
+  function updateSuggestions(val) {
+    dl.innerHTML = '';
+    if (!val) return;
+    const lower = val.toLowerCase();
+    allGames()
+      .filter(g => g.namn.toLowerCase().includes(lower))
+      .slice(0, 10)
+      .forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.namn;
+        dl.appendChild(opt);
+      });
+  }
+
+  nameInput.addEventListener('input', function() {
+    const val = this.value.trim();
+    updateSuggestions(val);
+    const match = allGames().find(g => g.namn.toLowerCase() === val.toLowerCase());
+    if (match) {
+      document.getElementById('form-box').value = match.låda || '';
+      document.getElementById('form-status').value = match.status || '';
+      if (!document.getElementById('form-ean').value && match.ean) {
+        document.getElementById('form-ean').value = match.ean;
+      }
+    }
+  });
+})();
+
+function clearForm() {
+  ['form-ean','form-name'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('form-box').value = '';
+  document.getElementById('form-status').value = '';
+}
+
+// Mini scan button in form
+document.getElementById('form-scan-btn').addEventListener('click', () => {
+  // Show a modal overlay with scanner
+  const overlay = document.createElement('div');
+  overlay.id = 'scan-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(14,12,9,0.95);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;';
+  overlay.innerHTML = `<div id="mini-reader" style="width:100%;max-width:360px;"></div>
+    <button class="btn btn-secondary" id="close-overlay" style="max-width:360px">Avbryt</button>`;
+  document.body.appendChild(overlay);
+
+  const mini = new Html5Qrcode('mini-reader');
+  mini.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 240, height: 120 }, formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128,
+    ]},
+    (ean) => {
+      document.getElementById('form-ean').value = ean;
+      // Auto-fill if known
+      const game = findByEan(ean);
+      if (game) {
+        document.getElementById('form-name').value = game.namn;
+        document.getElementById('form-box').value = game.låda;
+        document.getElementById('form-status').value = game.status || '';
+      }
+      mini.stop().then(() => overlay.remove());
+    },
+    () => {}
+  ).catch(() => { overlay.remove(); });
+
+  document.getElementById('close-overlay').addEventListener('click', () => {
+    mini.stop().catch(() => {}).finally(() => overlay.remove());
+  });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+initScanner();
+renderAllGames();
+
+// Service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/gameboxes/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

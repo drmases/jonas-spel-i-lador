@@ -2,579 +2,152 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gameboxes</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c9973a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spelsamling</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0e0c09;
-    --surface: #1a1610;
-    --border: #3a2e1e;
-    --accent: #c9973a;
-    --text: #e8dcc8;
-    --muted: #8a7a64;
-    --full: #7a3a3a;
-    --luft: #3a5a3a;
+    --bg: #0e0c09; --surface: #1a1610; --border: #3a2e1e;
+    --accent: #c9973a; --text: #e8dcc8; --muted: #8a7a64;
+    --full: #4a7c59; --luft: #4a6a8c;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
-  body { display: flex; flex-direction: column; }
-
-  /* Tab bar */
-  #tabbar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    display: flex; background: var(--surface); border-top: 1px solid var(--border);
-    z-index: 100; padding-bottom: env(safe-area-inset-bottom);
-  }
-  .tab-btn {
-    flex: 1; padding: 12px 8px 10px; background: none; border: none;
-    color: var(--muted); font-size: 11px; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    min-height: 56px; transition: color 0.15s;
-  }
-  .tab-btn .icon { font-size: 22px; }
-  .tab-btn.active { color: var(--accent); }
-
-  /* Panels */
-  .panel {
-    flex: 1; overflow-y: auto;
-    padding: 16px 16px calc(72px + env(safe-area-inset-bottom)) 16px;
-    display: none;
-  }
-  .panel.active { display: block; }
-
-  h1 { color: var(--accent); font-size: 20px; margin-bottom: 16px; font-weight: 700; letter-spacing: 0.02em; }
-
-  /* Scanner */
-  #reader { width: 100%; background: #000; }
-  #scan-result { display: none; }
-  .result-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 24px; text-align: center; margin-top: 16px;
-  }
-  .result-box {
-    font-size: 64px; font-weight: 900; color: var(--accent);
-    line-height: 1; letter-spacing: -0.02em;
-  }
-  .result-name { font-size: 20px; margin-top: 8px; color: var(--text); }
-  .badge {
-    display: inline-block; padding: 4px 12px; border-radius: 100px;
-    font-size: 13px; font-weight: 600; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .badge-full { background: var(--full); color: #ffb3b3; }
-  .badge-luft { background: var(--luft); color: #b3ffb3; }
-  .badge-null { background: var(--border); color: var(--muted); }
-  .btn {
-    display: block; width: 100%; padding: 14px; margin-top: 16px;
-    background: var(--accent); color: var(--bg); border: none;
-    border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer;
-    min-height: 48px; transition: opacity 0.15s;
-  }
-  .btn:active { opacity: 0.8; }
-  .btn-secondary {
-    background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
-  }
-
-  /* Unknown form */
-  #unknown-form { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
-  #unknown-form p { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
-
-  /* Search */
-  .search-wrap { position: relative; margin-bottom: 16px; }
-  .search-input {
-    width: 100%; padding: 14px 16px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 12px;
-    color: var(--text); font-size: 16px; outline: none;
-  }
-  .search-input:focus { border-color: var(--accent); }
-  .search-input::placeholder { color: var(--muted); }
-
-  /* Game cards */
-  .game-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .game-card-box {
-    font-size: 22px; font-weight: 900; color: var(--accent);
-    min-width: 48px; text-align: center; letter-spacing: -0.02em;
-  }
-  .game-card-info { flex: 1; min-width: 0; }
-  .game-card-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .game-card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .edit-btn {
-    background: none; border: 1px solid var(--border); color: var(--muted);
-    padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;
-    min-height: 36px; transition: border-color 0.15s, color 0.15s;
-  }
-  .edit-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* Form */
-  .form-group { margin-bottom: 14px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
-  .field {
-    width: 100%; padding: 13px 14px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 10px;
-    color: var(--text); font-size: 16px; outline: none; -webkit-appearance: none;
-  }
-  .field:focus { border-color: var(--accent); }
-  select.field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a7a64' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
-  .ean-row { display: flex; gap: 8px; }
-  .ean-row .field { flex: 1; }
-  .scan-mini-btn {
-    padding: 13px 14px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; color: var(--accent); cursor: pointer; font-size: 20px;
-    min-height: 48px; transition: border-color 0.15s;
-  }
-  .scan-mini-btn:hover { border-color: var(--accent); }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-  #game-list-header { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
-  #no-results { color: var(--muted); text-align: center; padding: 32px; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Crimson Pro',serif; font-size:17px; min-height:100vh; background-image: radial-gradient(ellipse at 20% 0%,rgba(201,151,58,.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(139,69,19,.08) 0%,transparent 50%); }
+  header { text-align:center; padding:60px 20px 40px; border-bottom:1px solid var(--border); position:relative; }
+  header::before { content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); width:120px; height:2px; background:var(--accent); }
+  h1 { font-family:'Inter',sans-serif; font-size:clamp(2.5rem,6vw,4.5rem); font-weight:900; color:var(--accent); text-shadow:0 0 60px rgba(201,151,58,.2); }
+  .subtitle { margin-top:10px; color:var(--muted); font-style:italic; }
+  .stats { display:flex; justify-content:center; gap:40px; margin-top:24px; flex-wrap:wrap; }
+  .stat { text-align:center; }
+  .stat-number { font-family:'Inter',sans-serif; font-size:2rem; color:var(--accent); display:block; }
+  .stat-label { font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
+  .controls { max-width:1200px; margin:40px auto 0; padding:0 20px 30px; display:flex; gap:16px; flex-wrap:wrap; align-items:center; border-bottom:1px solid var(--border); }
+  .search-wrap { flex:1; min-width:220px; position:relative; }
+  .search-wrap::before { content:'⌕'; position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:1.2rem; pointer-events:none; }
+  input[type="search"] { width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'Crimson Pro',serif; font-size:1rem; padding:10px 14px 10px 38px; outline:none; transition:border-color .2s; }
+  input[type="search"]:focus { border-color:var(--accent); }
+  input[type="search"]::placeholder { color:var(--muted); }
+  .filter-btns { display:flex; gap:8px; flex-wrap:wrap; }
+  .filter-btn { background:var(--surface); border:1px solid var(--border); color:var(--muted); font-family:'Crimson Pro',serif; font-size:.85rem; padding:8px 16px; cursor:pointer; letter-spacing:.05em; text-transform:uppercase; transition:all .2s; }
+  .filter-btn:hover,.filter-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(201,151,58,.07); }
+  .grid { max-width:1200px; margin:0 auto; padding:40px 20px; display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+  .box-card { background:var(--surface); border:1px solid var(--border); padding:22px; transition:border-color .2s,transform .2s; animation:fadeIn .4s ease both; }
+  .box-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .box-card.hidden { display:none; }
+  .box-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border); gap:8px; }
+  .box-label { font-family:'Inter',sans-serif; font-size:1.5rem; font-weight:700; color:var(--accent); }
+  .box-tag { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; padding:3px 10px; font-weight:600; }
+  .tag-full { background:#1a3322; color:var(--full); border:1px solid rgba(74,124,89,.3); }
+  .tag-luft { background:#1a2d3f; color:var(--luft); border:1px solid rgba(74,106,140,.3); }
+  .game-count { font-size:.75rem; color:var(--muted); font-style:italic; }
+  .game-list { list-style:none; }
+  .game-list li { padding:5px 0; border-bottom:1px dotted rgba(58,46,30,.6); font-size:.95rem; color:var(--text); line-height:1.3; transition:color .15s,padding-left .15s; }
+  .game-list li:last-child { border-bottom:none; }
+  .game-list li:hover { color:var(--accent); padding-left:4px; }
+  .game-list li.highlight { color:var(--accent); font-weight:600; }
+  .no-results { grid-column:1/-1; text-align:center; color:var(--muted); font-style:italic; font-size:1.2rem; padding:60px 0; }
+  footer { text-align:center; padding:30px; color:var(--muted); font-size:.85rem; border-top:1px solid var(--border); font-style:italic; }
 </style>
 </head>
 <body>
-
-<!-- SCAN PANEL -->
-<div class="panel active" id="panel-scan">
-  <h1>Skanna spel</h1>
-  <div id="reader"></div>
-  <div id="scan-result"></div>
-</div>
-
-<!-- SEARCH PANEL -->
-<div class="panel" id="panel-search">
-  <h1>Sök spel</h1>
+<header>
+  <h1>Spelsamling</h1>
+  <p class="subtitle">Komplett inventering</p>
+  <div class="stats">
+    <div class="stat"><span class="stat-number" id="totalGames">0</span><span class="stat-label">Spel totalt</span></div>
+    <div class="stat"><span class="stat-number" id="totalBoxes">0</span><span class="stat-label">Lådor + garderob</span></div>
+  </div>
+</header>
+<div class="controls">
   <div class="search-wrap">
-    <input class="search-input" id="search-input" type="search" placeholder="Spelnamn…" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input type="search" id="search" placeholder="Sök spel eller låda…" oninput="filterAll()">
   </div>
-  <div id="search-results"></div>
+  <div class="filter-btns">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Alla</button>
+    <button class="filter-btn" onclick="setFilter('full',this)">Full</button>
+    <button class="filter-btn" onclick="setFilter('luft',this)">Luft</button>
+    <button class="filter-btn" onclick="setFilter('garderob',this)">Garderob</button>
+  </div>
 </div>
-
-<!-- ADD/EDIT PANEL -->
-<div class="panel" id="panel-add">
-  <h1>Lägg till / Redigera</h1>
-  <div class="form-group">
-    <label>EAN-kod</label>
-    <div class="ean-row">
-      <input class="field" id="form-ean" type="text" placeholder="Skanna eller skriv…" inputmode="numeric">
-      <button class="scan-mini-btn" id="form-scan-btn" title="Skanna EAN">📷</button>
-    </div>
-  </div>
-  <div class="form-group">
-    <label>Spelnamn</label>
-    <input class="field" id="form-name" type="text" placeholder="Spelets namn" autocomplete="off" list="name-suggestions">
-    <datalist id="name-suggestions"></datalist>
-  </div>
-  <div class="form-group">
-    <label>Låda</label>
-    <select class="field" id="form-box">
-      <option value="">Välj låda…</option>
-      <option value="A">Låda A</option>
-      <option value="B">Låda B</option>
-      <option value="C">Låda C</option>
-      <option value="D">Låda D</option>
-      <option value="E">Låda E</option>
-      <option value="F">Låda F</option>
-      <option value="G">Låda G</option>
-      <option value="H">Låda H</option>
-      <option value="I">Låda I</option>
-      <option value="J1">Låda J1</option>
-      <option value="J2">Låda J2</option>
-      <option value="K">Låda K</option>
-      <option value="L">Låda L</option>
-      <option value="M">Låda M</option>
-      <option value="N">Låda N</option>
-      <option value="O">Låda O</option>
-      <option value="P">Låda P</option>
-      <option value="Q">Låda Q</option>
-      <option value="R">Låda R</option>
-      <option value="S">Låda S</option>
-      <option value="Garderob">Garderob</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label>Status</label>
-    <select class="field" id="form-status">
-      <option value="">–</option>
-      <option value="full">Full</option>
-      <option value="luft">Luft</option>
-    </select>
-  </div>
-  <button class="btn" id="form-save">Spara</button>
-  <button class="btn btn-secondary" id="form-clear" style="margin-top:8px">Rensa formulär</button>
-
-  <hr class="divider">
-  <div id="game-list-header"></div>
-  <div id="all-games-list"></div>
-
-  <hr class="divider">
-  <button class="btn btn-secondary" id="clear-storage-btn" style="width:100%;color:#c0392b;border-color:#c0392b">Rensa all sparad data (EAN-koder)</button>
-</div>
-
-<!-- TAB BAR -->
-<nav id="tabbar">
-  <button class="tab-btn active" data-panel="scan">
-    <span class="icon">📷</span>Skanna
-  </button>
-  <button class="tab-btn" data-panel="search">
-    <span class="icon">🔍</span>Sök
-  </button>
-  <button class="tab-btn" data-panel="add">
-    <span class="icon">➕</span>Lägg till
-  </button>
-</nav>
-
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="games.js"></script>
+<div class="grid" id="grid"></div>
+<footer>Alla lådor dokumenterade &mdash; 2026 &nbsp;|&nbsp; <a href="/gameboxesscanner/" style="color:var(--accent);text-decoration:none">📷 Skanner</a></footer>
 <script>
-// ── Data layer ──────────────────────────────────────────────────────────────
-const LS_KEY = 'gameboxes_overrides';
+const data=[
+  {id:"A",status:"full",games:["Survive: Escape from Atlantis!","Francis Drake","Scotland Yard ×2","Manhattan","Power Grid","Fast Sloths","Shogun"]},
+  {id:"B",status:"full",games:["Vast: The Crystal Caverns","Menara","Ave Caesar","Robo Rally","Flick 'Em Up"]},
+  {id:"C",status:null,games:["Pret-à-Porter","Escape from the Aliens in Outer Space","Crisis","Belfort","Brew Crafters","Race to the Rhine","Medieval","Eminent Domain","Brass: Lancashire","Paris Connection"]},
+  {id:"D",status:null,games:["Tärningar + stuff","The Isle of Cats","Sidereal Confluence","Village Rails","Switch & Signal","Ghost Stories"]},
+  {id:"E",status:"luft",games:["HeroQuest","Welcome to the Dungeon","Welcome Back to the Dungeon","One Night Ultimate Werewolf","The Crew: The Quest for Planet Nine","King of Tokyo: Power Up","King of Tokyo: Halloween","Spartacus","Castle Panic: The Dark Titan","Doppelt so clever","After the Virus","Power Struggle","Concordia: Salsa","Imperia 2030","Hive","Hotel Mystery"]},
+  {id:"F",status:"luft",games:["Kemet + expansion","Cyclades","Doom: The Board Game","Bridges of Shangri-La","Blood Bowl","The Thing: Infection at Outpost 31"]},
+  {id:"G",status:"luft",games:["Scythe + expansions","World of Warcraft: The Board Game – expansion","Magic: The Gathering","Ziplockpåsar i massor","Castle Itter"]},
+  {id:"H",status:"full",games:["Parade","Don't Mess with Cthulhu","King of New York + expansion","Euphoria","Mottainai","Mord im Arosa","The Bloody Inn","Twilight Struggle","Food Chain Magnate","Legendary","Conquest of Planet Earth","Star Wars: Rebellion + expansion","Bock Rock"]},
+  {id:"I",status:null,games:["Legendary – tillbehör och extra material"]},
+  {id:"J1",status:"full",games:["Rivet Wars","Istanbul + expansion","Onward to Venus","Carcassonne","Junta: Viva el Presidente","Courtier","Archeos Society","Lord of the Rings: The Card Game","Pipeline","A Study in Emerald (Second Edition)"]},
+  {id:"J2",status:null,games:["Race for the Galaxy + expansion","Fantasy Business","Nuns on the Run","Hive","Gamla kortspel","Dogs of War","Rapido","300: Earth & Water"]},
+  {id:"K",status:"full",games:["The Rivals for Catan","Small World","Small World Underground","Small World Underground: Be Not Afraid…","Small World Underground: Spider's Web","Chimera Station","Heckmeck am Bratwurmeck","Bang! The Dice Game","Bang! The Bullet","Dixit","The Boss","Circus Flohcati","Deep Space D-6","Cash 'n Guns – expansion","Dead of Winter: A Crossroads Game","Illuminati","Operation F.A.U.S.T.","Las Vegas","Gulyabani","Lost Legacy","Abyss: Kraken","Abyss: Leviathan","Kakerlaken Poker Royal"]},
+  {id:"L",status:"full",games:["Lifeboat","Euphoria – expansion","Elysium","Fury of Dracula","Point Salad","Cosmic Encounter + expansions","Barcelona","Mission: Red Planet","A Game of Thrones: The Board Game","Insider","Colt Super Express","Ticket to Ride: Europe 1912","Blitz","Planet"]},
+  {id:"M",status:"full",games:["The Doolittle Raid","A Game of Thrones – expansion","Kick-Ass: The Board Game","Container","A Touch of Evil","Ticket to Ride","Carnival Zombie","Avalon","Exit","Lord of the Rings: The Card Game","Sky Runners"]},
+  {id:"N",status:null,games:["Thunderbolt Apache Leader","Corsair Leader","RAF","Sherman Leader","Days of Ire","Phantom Leader","Fields of Fire","Thunder Alley"]},
+  {id:"O",status:"luft",games:["Tärningar + stuff","The Isle of Cats","Sidereal Confluence","Village Rails","Switch & Signal","Ghost Stories","Furnace"]},
+  {id:"P",status:null,games:["The Siege of Runedar","Circus Topito","Evil Dead: The Board Game","Northern Pacific","That's Life!","Beyond the Sun","Hit Z Road","Cyclades: Titans","Hollywood","Diner","Uluru","Make 'n' Break","Rem Purr A","Yardmaster","Yardmaster Express","Millions of Dollars","Beasty Bar","Kontor"]},
+  {id:"Q",status:"luft",games:["Thurn & Taxis","Kick-Ass","Mahjong","Nemo's War","Splendor","Gravwell","Battle for Souls","Raccoon Tycoon","Innovation Deluxe","Déjà Vu?","For Sale","Push","Scout","The Crew: The Quest for Planet Nine","Deep Sea Adventure","Las Vegas","No Thanks!"]},
+  {id:"R",status:"full",games:["Marvel Legendary","Colony","Trickerion","Tiny Towns","Abyss","Caverna","Room 25"]},
+  {id:"S",status:null,games:["Jorvik","Skyliners","Toledo","Keltis","Cartagena","Falling Sky","The Artemis Project","Raptor","City of Horror","Mall of Horror"]},
+  {id:"🚪 Garderob",status:"garderob",games:["Rising Sun","Bandu","Stronghold","Carson City","Barrage","Kanban EV","The Gallerist","Imperial","Concordia","Coffee Traders","Dominant Species","Archipelago","The Castles of Burgundy","Roll Player","Wonderlands War","Sorcerer","Smartphone Inc.","Rebel Princess","North American Railways","Hamburg","Tokyo Highway","Septima","Race to Moscow","Cuba Libre","The Thing: The Boardgame","Jórvík","Fliptoons","The Lord of the Rings: The Fellowship of the Ring – Trick-Taking Game","The Lord of the Rings: The Two Towers – Trick-Taking Game","Ethnos: 2nd Edition"]}
+];
 
-function loadOverrides() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
-}
-function saveOverrides(arr) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch {}
+let currentFilter='all',currentSearch='';
+
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterAll();
 }
 
-function allGames() {
-  const seed = window.GAMES || [];
-  const overrides = loadOverrides();
-  // Merge: overrides by EAN (if set) or treated as additions
-  const map = new Map();
-  seed.forEach((g, i) => map.set('seed_' + i, {...g}));
-  overrides.forEach(o => {
-    let found = false;
-    // Match by EAN first
-    if (o.ean) {
-      for (const [k, v] of map) { if (v.ean === o.ean) { map.set(k, {...v, ...o}); found = true; break; } }
-    }
-    // Fall back to name match (handles adding EAN to a seed entry with ean:null)
-    if (!found && o.namn) {
-      for (const [k, v] of map) {
-        if (v.namn.toLowerCase() === o.namn.toLowerCase()) { map.set(k, {...v, ...o}); found = true; break; }
-      }
-    }
-    if (!found) {
-      const key = o.ean ? 'override_' + o.ean : o._id ? 'override_' + o._id : 'override_' + Math.random();
-      map.set(key, o);
-    }
+function filterAll(){
+  currentSearch=document.getElementById('search').value.toLowerCase();
+  let visible=0;
+  document.querySelectorAll('.box-card').forEach(card=>{
+    const sm=currentFilter==='all'||card.dataset.status===currentFilter;
+    const srch=!currentSearch||card.dataset.id.toLowerCase().includes(currentSearch)||card.dataset.games.toLowerCase().includes(currentSearch);
+    if(sm&&srch){card.classList.remove('hidden');visible++;}
+    else card.classList.add('hidden');
+    card.querySelectorAll('.game-list li').forEach(li=>{
+      li.classList.toggle('highlight',!!(currentSearch&&li.textContent.toLowerCase().includes(currentSearch)));
+    });
   });
-  return [...map.values()];
+  document.querySelector('.no-results').style.display=visible===0?'block':'none';
 }
 
-function findByEan(ean) {
-  const overrides = loadOverrides();
-  const fromOverride = overrides.find(o => o.ean === ean);
-  if (fromOverride) return fromOverride;
-  return (window.GAMES || []).find(g => g.ean === ean) || null;
-}
-
-function upsertOverride(game) {
-  const overrides = loadOverrides();
-  if (game.ean) {
-    const idx = overrides.findIndex(o => o.ean === game.ean);
-    if (idx >= 0) overrides[idx] = game; else overrides.push(game);
-  } else {
-    if (game._id) {
-      const idx = overrides.findIndex(o => o._id === game._id);
-      if (idx >= 0) overrides[idx] = game; else overrides.push(game);
-    } else {
-      game._id = Date.now().toString(36);
-      overrides.push(game);
-    }
-  }
-  saveOverrides(overrides);
-}
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-function boxLabel(låda) {
-  return låda === 'Garderob' ? 'Garderob' : 'Låda ' + låda;
-}
-
-function statusBadge(status) {
-  if (!status) return '';
-  const cls = status === 'full' ? 'badge-full' : status === 'luft' ? 'badge-luft' : 'badge-null';
-  const label = status === 'full' ? 'Full' : 'Luft';
-  return `<span class="badge ${cls}">${label}</span>`;
-}
-
-function gameCard(g, showEdit = false) {
-  const sub = g.ean ? `EAN: ${g.ean}` : '';
-  const badge = statusBadge(g.status);
-  let btn = '';
-  if (showEdit) {
-    btn = `<button class="edit-btn" onclick="editGame(${JSON.stringify(g).replace(/"/g,'&quot;')})">Redigera</button>`;
-  } else if (!g.ean) {
-    btn = `<button class="edit-btn" onclick="addEan(${JSON.stringify(g).replace(/"/g,'&quot;')})">+ EAN</button>`;
-  }
-  return `<div class="game-card">
-    <div class="game-card-box">${g.låda}</div>
-    <div class="game-card-info">
-      <div class="game-card-name">${g.namn}</div>
-      <div class="game-card-sub">${boxLabel(g.låda)} ${badge} ${sub}</div>
-    </div>
-    ${btn}
-  </div>`;
-}
-
-window.addEan = function(g) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('[data-panel="add"]').classList.add('active');
-  document.getElementById('panel-add').classList.add('active');
-  document.getElementById('form-ean').value = '';
-  document.getElementById('form-name').value = g.namn;
-  document.getElementById('form-box').value = g.låda || '';
-  document.getElementById('form-status').value = g.status || '';
-  document.getElementById('form-ean').focus();
-  document.getElementById('form-ean').scrollIntoView({ behavior: 'smooth', block: 'center' });
-};
-
-// ── Tabs ─────────────────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const panel = btn.dataset.panel;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-' + panel).classList.add('active');
-    if (panel === 'scan' && !scannerRunning) initScanner();
-    if (panel === 'add') renderAllGames();
-    if (panel === 'search') document.getElementById('search-input').focus();
+function render(){
+  const grid=document.getElementById('grid');
+  let total=0;
+  data.forEach((box,i)=>{
+    total+=box.games.length;
+    const card=document.createElement('div');
+    card.className='box-card';
+    card.dataset.status=box.status||'normal';
+    card.dataset.id=box.id;
+    card.dataset.games=box.games.join(' ');
+    card.style.animationDelay=(i*0.03)+'s';
+    let tag='';
+    if(box.status==='full') tag='<span class="box-tag tag-full">Full</span>';
+    else if(box.status==='luft') tag='<span class="box-tag tag-luft">Luft</span>';
+    const lbl=box.status==='garderob'
+      ?'<span class="box-label">🚪 Garderob</span>'
+      :`<span class="box-label">Låda ${box.id}</span>`;
+    card.innerHTML=`<div class="box-header">${lbl}<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${tag}<span class="game-count">${box.games.length} spel</span></div></div><ul class="game-list">${box.games.map(g=>`<li>${g}</li>`).join('')}</ul>`;
+    grid.appendChild(card);
   });
-});
-
-// ── Scanner ───────────────────────────────────────────────────────────────────
-let scanner = null;
-let scannerRunning = false;
-let miniScanner = null;
-
-function initScanner(targetElementId = 'reader', onSuccess = handleScanResult) {
-  if (scanner) { try { scanner.stop(); } catch {} scanner = null; }
-  scannerRunning = false;
-  const el = document.getElementById(targetElementId);
-  if (!el) return;
-  el.innerHTML = '';
-  scanner = new Html5Qrcode(targetElementId);
-  scanner.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 240, height: 120 }, formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.CODE_128,
-    ]},
-    onSuccess,
-    () => {}
-  ).then(() => { scannerRunning = true; }).catch(err => {
-    el.innerHTML = `<p style="color:var(--muted);padding:24px;text-align:center">Kamera ej tillgänglig: ${err}</p>`;
-  });
+  const nr=document.createElement('p');
+  nr.className='no-results';nr.textContent='Inga spel hittades.';nr.style.display='none';
+  grid.appendChild(nr);
+  document.getElementById('totalGames').textContent=total;
+  document.getElementById('totalBoxes').textContent=data.length;
 }
-
-function handleScanResult(ean) {
-  if (!scannerRunning) return;
-  // Pause scanning
-  try { scanner.pause(); } catch {}
-
-  const game = findByEan(ean);
-  const resultEl = document.getElementById('scan-result');
-  resultEl.style.display = 'block';
-
-  if (game) {
-    resultEl.innerHTML = `
-      <div class="result-card">
-        <div class="result-box">${game.låda}</div>
-        <div class="result-name">${game.namn}</div>
-        <div>${statusBadge(game.status) || '<span class="badge badge-null">Okänd status</span>'}</div>
-        <div style="margin-top:6px;font-size:13px;color:var(--muted)">${boxLabel(game.låda)}</div>
-        <button class="btn" style="margin-top:20px" onclick="resumeScan()">Skanna igen</button>
-      </div>`;
-  } else {
-    resultEl.innerHTML = `
-      <div class="result-card">
-        <div style="font-size:18px;font-weight:700;color:var(--muted)">Okänd kod</div>
-        <div style="font-size:14px;color:var(--muted);margin-top:4px">${ean}</div>
-        <div id="unknown-form">
-          <p>Vill du lägga till spelet?</p>
-          <div class="form-group">
-            <label>Spelnamn</label>
-            <input class="field" id="quick-name" type="text" placeholder="Spelets namn">
-          </div>
-          <div class="form-group">
-            <label>Låda</label>
-            <select class="field" id="quick-box">
-              <option value="">Välj låda…</option>
-              ${['A','B','C','D','E','F','G','H','I','J1','J2','K','L','M','N','O','P','Q','R','S','Garderob']
-                .map(b => `<option value="${b}">${b === 'Garderob' ? 'Garderob' : 'Låda ' + b}</option>`).join('')}
-            </select>
-          </div>
-          <button class="btn" onclick="quickSave('${ean}')">Spara</button>
-        </div>
-        <button class="btn btn-secondary" style="margin-top:8px" onclick="resumeScan()">Skanna igen</button>
-      </div>`;
-  }
-}
-
-function resumeScan() {
-  document.getElementById('scan-result').style.display = 'none';
-  document.getElementById('scan-result').innerHTML = '';
-  try { scanner.resume(); } catch { initScanner(); }
-}
-
-function quickSave(ean) {
-  const name = document.getElementById('quick-name').value.trim();
-  const box = document.getElementById('quick-box').value;
-  if (!name || !box) { alert('Fyll i namn och låda.'); return; }
-  upsertOverride({ ean, namn: name, låda: box, status: null });
-  // Show result
-  handleScanResult(ean);
-}
-
-// ── Search ────────────────────────────────────────────────────────────────────
-const searchInput = document.getElementById('search-input');
-searchInput.addEventListener('input', () => {
-  const q = searchInput.value.trim().toLowerCase();
-  const resultsEl = document.getElementById('search-results');
-  if (!q) { resultsEl.innerHTML = ''; return; }
-  const games = allGames().filter(g => g.namn.toLowerCase().includes(q));
-  if (!games.length) {
-    resultsEl.innerHTML = '<div id="no-results">Inget spel hittades.</div>';
-    return;
-  }
-  resultsEl.innerHTML = games.map(g => gameCard(g)).join('');
-});
-
-// ── Add / Edit ────────────────────────────────────────────────────────────────
-function renderAllGames() {
-  const games = allGames();
-  document.getElementById('game-list-header').textContent = `${games.length} spel i samlingen`;
-  document.getElementById('all-games-list').innerHTML = games.map(g => gameCard(g, true)).join('');
-}
-
-window.editGame = function(g) {
-  document.getElementById('form-ean').value = g.ean || '';
-  document.getElementById('form-name').value = g.namn || '';
-  document.getElementById('form-box').value = g.låda || '';
-  document.getElementById('form-status').value = g.status || '';
-  // Switch to add tab
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('[data-panel="add"]').classList.add('active');
-  document.getElementById('panel-add').classList.add('active');
-  document.getElementById('form-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
-};
-
-document.getElementById('form-save').addEventListener('click', () => {
-  const ean = document.getElementById('form-ean').value.trim() || null;
-  const name = document.getElementById('form-name').value.trim();
-  const box = document.getElementById('form-box').value;
-  const status = document.getElementById('form-status').value || null;
-  if (!name || !box) { alert('Namn och låda krävs.'); return; }
-  upsertOverride({ ean, namn: name, låda: box, status });
-  clearForm();
-  renderAllGames();
-  alert('Sparat!');
-});
-
-document.getElementById('form-clear').addEventListener('click', clearForm);
-
-document.getElementById('clear-storage-btn').addEventListener('click', () => {
-  if (confirm('Radera alla sparade EAN-koder? Detta går inte att ångra.')) {
-    localStorage.removeItem('gameboxes_overrides');
-    renderAllGames();
-    alert('All sparad data raderad.');
-  }
-});
-
-// Autocomplete with partial match and auto-fill
-(function() {
-  const dl = document.getElementById('name-suggestions');
-  const nameInput = document.getElementById('form-name');
-
-  function updateSuggestions(val) {
-    dl.innerHTML = '';
-    if (!val) return;
-    const lower = val.toLowerCase();
-    allGames()
-      .filter(g => g.namn.toLowerCase().includes(lower))
-      .slice(0, 10)
-      .forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.namn;
-        dl.appendChild(opt);
-      });
-  }
-
-  nameInput.addEventListener('input', function() {
-    const val = this.value.trim();
-    updateSuggestions(val);
-    const match = allGames().find(g => g.namn.toLowerCase() === val.toLowerCase());
-    if (match) {
-      document.getElementById('form-box').value = match.låda || '';
-      document.getElementById('form-status').value = match.status || '';
-      if (!document.getElementById('form-ean').value && match.ean) {
-        document.getElementById('form-ean').value = match.ean;
-      }
-    }
-  });
-})();
-
-function clearForm() {
-  ['form-ean','form-name'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('form-box').value = '';
-  document.getElementById('form-status').value = '';
-}
-
-// Mini scan button in form
-document.getElementById('form-scan-btn').addEventListener('click', () => {
-  // Show a modal overlay with scanner
-  const overlay = document.createElement('div');
-  overlay.id = 'scan-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(14,12,9,0.95);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;';
-  overlay.innerHTML = `<div id="mini-reader" style="width:100%;max-width:360px;"></div>
-    <button class="btn btn-secondary" id="close-overlay" style="max-width:360px">Avbryt</button>`;
-  document.body.appendChild(overlay);
-
-  const mini = new Html5Qrcode('mini-reader');
-  mini.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 240, height: 120 }, formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.CODE_128,
-    ]},
-    (ean) => {
-      document.getElementById('form-ean').value = ean;
-      // Auto-fill if known
-      const game = findByEan(ean);
-      if (game) {
-        document.getElementById('form-name').value = game.namn;
-        document.getElementById('form-box').value = game.låda;
-        document.getElementById('form-status').value = game.status || '';
-      }
-      mini.stop().then(() => overlay.remove());
-    },
-    () => {}
-  ).catch(() => { overlay.remove(); });
-
-  document.getElementById('close-overlay').addEventListener('click', () => {
-    mini.stop().catch(() => {}).finally(() => overlay.remove());
-  });
-});
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-initScanner();
-renderAllGames();
-
-// Service worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/gameboxes/sw.js').catch(() => {});
-}
+render();
 </script>
 </body>
 </html>
