@@ -1,4 +1,4 @@
-const CACHE = 'gameboxes-v1';
+const CACHE = 'gameboxesscanner-v2';
 const ASSETS = [
   '/gameboxesscanner/',
   '/gameboxesscanner/index.html',

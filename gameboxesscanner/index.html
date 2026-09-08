@@ -140,7 +140,13 @@
 <!-- SCAN PANEL -->
 <div class="panel active" id="panel-scan">
   <h1>Skanna spel</h1>
-  <div id="reader"></div>
+  <div id="reader">
+    <button class="btn" id="capture-btn" style="font-size:18px;padding:22px">📷 Ta foto av streckkoden</button>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
+      Håll streckkoden stor och skarp i bild.
+    </p>
+    <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
+  </div>
   <div id="scan-result"></div>
 </div>
 
@@ -342,45 +348,58 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('panel-' + panel).classList.add('active');
-    if (panel === 'scan' && !scannerRunning) initScanner();
+    if (panel === 'scan') initScanner();
     if (panel === 'add') renderAllGames();
     if (panel === 'search') document.getElementById('search-input').focus();
   });
 });
 
-// ── Scanner ───────────────────────────────────────────────────────────────────
-let scanner = null;
-let scannerRunning = false;
-let miniScanner = null;
+// ── Scanner (photo based — works reliably on iOS) ─────────────────────────────
+// Decodes a barcode from a photo the native camera app captured.
+function decodePhoto(file) {
+  const el = document.createElement('div');
+  el.style.display = 'none';
+  document.body.appendChild(el);
+  el.id = 'decode-scratch-' + Date.now();
+  const reader = new Html5Qrcode(el.id);
+  return reader.scanFile(file, false)
+    .finally(() => { try { reader.clear(); } catch {} el.remove(); });
+}
 
-function initScanner(targetElementId = 'reader', onSuccess = handleScanResult) {
-  if (scanner) { try { scanner.stop(); } catch {} scanner = null; }
-  scannerRunning = false;
-  const el = document.getElementById(targetElementId);
-  if (!el) return;
-  el.innerHTML = '';
-  scanner = new Html5Qrcode(targetElementId);
-  scanner.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 240, height: 120 }, formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.CODE_128,
-    ]},
-    onSuccess,
-    () => {}
-  ).then(() => { scannerRunning = true; }).catch(err => {
-    el.innerHTML = `<p style="color:var(--muted);padding:24px;text-align:center">Kamera ej tillgänglig: ${err}</p>`;
+function initScanner() {
+  const btn = document.getElementById('capture-btn');
+  const input = document.getElementById('capture-input');
+  if (!btn || btn.dataset.wired) return;
+  btn.dataset.wired = '1';
+
+  btn.addEventListener('click', () => input.click());
+
+  input.addEventListener('change', async () => {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    btn.disabled = true;
+    btn.textContent = 'Läser av…';
+    try {
+      const ean = await decodePhoto(file);
+      handleScanResult(ean);
+    } catch {
+      const resultEl = document.getElementById('scan-result');
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `
+        <div class="result-card">
+          <div style="font-size:18px;font-weight:700;color:var(--muted)">Ingen streckkod hittades</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:8px">Ta ett nytt foto — närmare och skarpare.</div>
+          <button class="btn" style="margin-top:20px" onclick="resumeScan()">Försök igen</button>
+        </div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '📷 Ta foto av streckkoden';
+    }
   });
 }
 
 function handleScanResult(ean) {
-  if (!scannerRunning) return;
-  // Pause scanning
-  try { scanner.pause(); } catch {}
-
   const game = findByEan(ean);
   const resultEl = document.getElementById('scan-result');
   resultEl.style.display = 'block';
@@ -423,7 +442,6 @@ function handleScanResult(ean) {
 function resumeScan() {
   document.getElementById('scan-result').style.display = 'none';
   document.getElementById('scan-result').innerHTML = '';
-  try { scanner.resume(); } catch { initScanner(); }
 }
 
 function quickSave(ean) {
@@ -530,41 +548,38 @@ function clearForm() {
   document.getElementById('form-status').value = '';
 }
 
-// Mini scan button in form
-document.getElementById('form-scan-btn').addEventListener('click', () => {
-  // Show a modal overlay with scanner
-  const overlay = document.createElement('div');
-  overlay.id = 'scan-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(14,12,9,0.95);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;';
-  overlay.innerHTML = `<div id="mini-reader" style="width:100%;max-width:360px;"></div>
-    <button class="btn btn-secondary" id="close-overlay" style="max-width:360px">Avbryt</button>`;
-  document.body.appendChild(overlay);
+// Mini scan button in form — same photo flow
+const miniInput = document.createElement('input');
+miniInput.type = 'file';
+miniInput.accept = 'image/*';
+miniInput.capture = 'environment';
+miniInput.hidden = true;
+document.body.appendChild(miniInput);
 
-  const mini = new Html5Qrcode('mini-reader');
-  mini.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 240, height: 120 }, formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.CODE_128,
-    ]},
-    (ean) => {
-      document.getElementById('form-ean').value = ean;
-      // Auto-fill if known
-      const game = findByEan(ean);
-      if (game) {
-        document.getElementById('form-name').value = game.namn;
-        document.getElementById('form-box').value = game.låda;
-        document.getElementById('form-status').value = game.status || '';
-      }
-      mini.stop().then(() => overlay.remove());
-    },
-    () => {}
-  ).catch(() => { overlay.remove(); });
+document.getElementById('form-scan-btn').addEventListener('click', () => miniInput.click());
 
-  document.getElementById('close-overlay').addEventListener('click', () => {
-    mini.stop().catch(() => {}).finally(() => overlay.remove());
-  });
+miniInput.addEventListener('change', async () => {
+  const file = miniInput.files && miniInput.files[0];
+  miniInput.value = '';
+  if (!file) return;
+  const btn = document.getElementById('form-scan-btn');
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const ean = await decodePhoto(file);
+    document.getElementById('form-ean').value = ean;
+    const game = findByEan(ean);
+    if (game) {
+      document.getElementById('form-name').value = game.namn;
+      document.getElementById('form-box').value = game.låda;
+      document.getElementById('form-status').value = game.status || '';
+    }
+  } catch {
+    alert('Ingen streckkod hittades i fotot. Försök igen — närmare och skarpare.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📷';
+  }
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -573,7 +588,7 @@ renderAllGames();
 
 // Service worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/gameboxes/sw.js').catch(() => {});
+  navigator.serviceWorker.register('/gameboxesscanner/sw.js').catch(() => {});
 }
 </script>
 </body>
