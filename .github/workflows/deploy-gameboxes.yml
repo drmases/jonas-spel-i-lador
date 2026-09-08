@@ -22,6 +22,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           source: "gameboxes/*"
           target: "webroots/www/gameboxes"
+          overwrite: true
           strip_components: 1
 
   deploy-scanner:
@@ -38,6 +39,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           source: "gameboxesscanner/*"
           target: "webroots/www/gameboxesscanner"
+          overwrite: true
           strip_components: 1
 
   deploy-list:
@@ -54,4 +56,5 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           source: "gameboxeslist/*"
           target: "webroots/www/gameboxeslist"
+          overwrite: true
           strip_components: 1
