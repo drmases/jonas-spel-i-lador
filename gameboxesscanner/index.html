@@ -130,6 +130,22 @@
     min-height: 48px; transition: border-color 0.15s;
   }
   .scan-mini-btn:hover { border-color: var(--accent); }
+  /* Name suggestions — a real list, because iOS Safari's datalist support
+     is unreliable and the suggestions simply never appeared there. */
+  .suggest-wrap { position: relative; }
+  .suggest-list {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
+    background: var(--surface); border: 1px solid var(--accent);
+    border-radius: 10px; max-height: 240px; overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  }
+  .suggest-item {
+    padding: 12px 14px; font-size: 15px; cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+  .suggest-item:last-child { border-bottom: none; }
+  .suggest-item:active { background: rgba(201,151,58,.15); }
+  .suggest-item .sub { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
   .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   #game-list-header { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
   #no-results { color: var(--muted); text-align: center; padding: 32px; }
@@ -171,8 +187,11 @@
   </div>
   <div class="form-group">
     <label>Spelnamn</label>
-    <input class="field" id="form-name" type="text" placeholder="Spelets namn" autocomplete="off" list="name-suggestions">
-    <datalist id="name-suggestions"></datalist>
+    <div class="suggest-wrap">
+      <input class="field" id="form-name" type="text" placeholder="Spelets namn"
+             autocomplete="off" autocorrect="off" spellcheck="false">
+      <div class="suggest-list" id="name-suggestions" hidden></div>
+    </div>
   </div>
   <div class="form-group">
     <label>Låda</label>
@@ -536,26 +555,44 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
 
 // Autocomplete with partial match and auto-fill
 (function() {
-  const dl = document.getElementById('name-suggestions');
+  const list = document.getElementById('name-suggestions');
   const nameInput = document.getElementById('form-name');
 
-  function updateSuggestions(val) {
-    dl.innerHTML = '';
-    if (!val) return;
+  function fill(game) {
+    nameInput.value = game.namn;
+    document.getElementById('form-box').value = game.låda || '';
+    document.getElementById('form-status').value = game.status || '';
+    const eanField = document.getElementById('form-ean');
+    if (!eanField.value && game.ean) eanField.value = game.ean;
+    hide();
+  }
+
+  function hide() { list.hidden = true; list.innerHTML = ''; }
+
+  function show(val) {
     const lower = val.toLowerCase();
-    allGames()
+    const matches = allGames()
       .filter(g => g.namn.toLowerCase().includes(lower))
-      .slice(0, 10)
-      .forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.namn;
-        dl.appendChild(opt);
-      });
+      .slice(0, 8);
+    if (!matches.length) { hide(); return; }
+    list.innerHTML = '';
+    matches.forEach(g => {
+      const item = document.createElement('div');
+      item.className = 'suggest-item';
+      item.innerHTML = g.namn.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+        + '<span class="sub">' + boxLabel(g.låda) + '</span>';
+      // mousedown/touchstart fire before the input blurs, so the tap lands.
+      item.addEventListener('mousedown', e => { e.preventDefault(); fill(g); });
+      item.addEventListener('touchstart', e => { e.preventDefault(); fill(g); }, { passive: false });
+      list.appendChild(item);
+    });
+    list.hidden = false;
   }
 
   nameInput.addEventListener('input', function() {
     const val = this.value.trim();
-    updateSuggestions(val);
+    if (!val) { hide(); return; }
+    show(val);
     const match = allGames().find(g => g.namn.toLowerCase() === val.toLowerCase());
     if (match) {
       document.getElementById('form-box').value = match.låda || '';
@@ -564,6 +601,16 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
         document.getElementById('form-ean').value = match.ean;
       }
     }
+  });
+
+  nameInput.addEventListener('focus', function() {
+    const val = this.value.trim();
+    if (val) show(val);
+  });
+
+  nameInput.addEventListener('blur', () => setTimeout(hide, 150));
+  document.addEventListener('click', e => {
+    if (!list.contains(e.target) && e.target !== nameInput) hide();
   });
 })();
 
