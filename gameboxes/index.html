@@ -71,6 +71,11 @@
   </div>
 </div>
 <div class="grid" id="grid"></div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+}
+</script>
 <footer>Alla lådor dokumenterade &mdash; 2026 &nbsp;|&nbsp; <a href="/gameboxesscanner/" style="color:var(--accent);text-decoration:none">📷 Skanner</a></footer>
 <script>
 const data=[
