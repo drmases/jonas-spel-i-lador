@@ -143,7 +143,7 @@
   <div id="reader">
     <button class="btn" id="capture-btn" style="font-size:18px;padding:22px">📷 Ta foto av streckkoden</button>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v7)</span>
+      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v8)</span>
     </p>
     <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
   </div>
@@ -392,31 +392,35 @@ async function photoCanvases(file) {
   const MAX = 2400;
   const canvases = [];
 
-  const add = (frac, rotate) => {
-    const sw = W * frac, sh = H * frac;
-    const sx = (W - sw) / 2, sy = (H - sh) / 2;
+  const add = (sx, sy, sw, sh) => {
     const scale = Math.min(1, MAX / Math.max(sw, sh));
-    const w = Math.round(sw * scale), h = Math.round(sh * scale);
+    const w = Math.max(1, Math.round(sw * scale));
+    const h = Math.max(1, Math.round(sh * scale));
     const c = document.createElement('canvas');
-    const ctx = c.getContext('2d', { willReadFrequently: true });
-    if (rotate) {
-      c.width = h; c.height = w;
-      ctx.translate(h / 2, w / 2);
-      ctx.rotate(Math.PI / 2);
-      ctx.drawImage(img, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
-    } else {
-      c.width = w; c.height = h;
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
-    }
+    c.width = w; c.height = h;
+    c.getContext('2d', { willReadFrequently: true })
+      .drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
     canvases.push(c);
   };
 
-  add(1, false);
-  add(0.75, false);
-  add(0.5, false);
-  add(0.35, false);
-  add(1, true);
-  add(0.5, true);
+  // Whole frame first — usually enough when the code is held close.
+  add(0, 0, W, H);
+
+  // Then sweep the frame in overlapping tiles, so a code sitting off to one
+  // side is covered too. Centre crops alone miss those entirely.
+  const grid = (n) => {
+    const overlap = 0.25;
+    const tw = W / (n - (n - 1) * overlap);
+    const th = H / (n - (n - 1) * overlap);
+    const stepX = tw * (1 - overlap), stepY = th * (1 - overlap);
+    for (let r = 0; r < n; r++) {
+      for (let col = 0; col < n; col++) {
+        add(Math.round(col * stepX), Math.round(r * stepY), Math.round(tw), Math.round(th));
+      }
+    }
+  };
+  grid(2);
+  grid(3);
 
   return canvases;
 }
@@ -441,14 +445,26 @@ function getZxingReader() {
   return zxingReader || null;
 }
 
+// NotFoundException just means "no code in this crop". Anything else means the
+// call itself is wrong, which is worth seeing rather than swallowing.
+let lastDecodeError = '';
+
 function zxingDecode(canvas) {
   const reader = getZxingReader();
-  if (!reader) return null;
+  if (!reader) { lastDecodeError = 'reader saknas'; return null; }
+  if (typeof reader.decodeFromCanvas !== 'function') {
+    lastDecodeError = 'decodeFromCanvas saknas';
+    return null;
+  }
   try {
     const res = reader.decodeFromCanvas(canvas);
     const text = res && res.getText ? res.getText() : null;
     return text || null;
-  } catch {
+  } catch (err) {
+    const name = (err && (err.name || (err.constructor && err.constructor.name))) || 'Error';
+    if (!/NotFound/i.test(name) && !lastDecodeError) {
+      lastDecodeError = name + ': ' + ((err && err.message) || '').slice(0, 80);
+    }
     return null;
   }
 }
@@ -466,8 +482,10 @@ function decodeOne(file) {
 }
 
 async function decodePhoto(file, onProgress) {
+  lastDecodeError = '';
   const canvases = await photoCanvases(file);
-  const total = canvases.length * 2;
+  const fallback = canvases.slice(0, 4); // html5-qrcode is slow; a few is enough
+  const total = canvases.length + fallback.length;
   let step = 0;
   const tick = () => { step++; if (onProgress) onProgress(step, total); };
 
@@ -479,8 +497,8 @@ async function decodePhoto(file, onProgress) {
     await new Promise(r => setTimeout(r, 0)); // let the button repaint
   }
 
-  // Pass 2 — html5-qrcode, in case ZXing is unavailable or reads it differently.
-  for (const canvas of canvases) {
+  // Pass 2 — html5-qrcode, in case ZXing reads it differently.
+  for (const canvas of fallback) {
     tick();
     try {
       return await decodeOne(await canvasToFile(canvas));
@@ -515,7 +533,7 @@ function initScanner() {
           <div style="font-size:18px;font-weight:700;color:var(--muted)">Ingen streckkod hittades</div>
           <div style="font-size:14px;color:var(--muted);margin-top:8px">Ta ett nytt foto — närmare och skarpare.</div>
           <div style="font-size:11px;color:var(--muted);margin-top:8px;opacity:.7">
-            ZXing: ${getZxingReader() ? 'ja' : 'nej'} · foto: ${lastPhotoSize}
+            foto: ${lastPhotoSize}${lastDecodeError ? ' · fel: ' + lastDecodeError : ' · ZXing svarade NotFound'}
           </div>
           <button class="btn" style="margin-top:20px" onclick="resumeScan()">Försök igen</button>
         </div>`;
