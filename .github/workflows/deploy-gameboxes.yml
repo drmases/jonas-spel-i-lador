@@ -5,15 +5,16 @@ on:
     branches: [main]
     paths:
       - 'gameboxes/**'
+      - 'gameboxesscanner/**'
 
 jobs:
-  deploy:
+  deploy-overview:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy via SFTP
+      - name: Deploy overview via SFTP
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.FTP_SERVER }}
@@ -21,4 +22,20 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           source: "gameboxes/*"
           target: "webroots/www/gameboxes"
+          strip_components: 1
+
+  deploy-scanner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy scanner via SFTP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          source: "gameboxesscanner/*"
+          target: "webroots/www/gameboxesscanner"
           strip_components: 1
