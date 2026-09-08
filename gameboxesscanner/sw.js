@@ -1,10 +1,11 @@
-const CACHE = 'gameboxesscanner-v6';
+const CACHE = 'gameboxesscanner-v7';
 const ASSETS = [
   '/gameboxesscanner/',
   '/gameboxesscanner/index.html',
   '/gameboxesscanner/games.js',
   '/gameboxesscanner/manifest.json',
   'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
+  'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js',
 ];
 
 self.addEventListener('install', e => {

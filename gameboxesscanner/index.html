@@ -143,7 +143,7 @@
   <div id="reader">
     <button class="btn" id="capture-btn" style="font-size:18px;padding:22px">📷 Ta foto av streckkoden</button>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v6)</span>
+      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v7)</span>
     </p>
     <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
   </div>
@@ -233,6 +233,7 @@
   </button>
 </nav>
 
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="games.js"></script>
 <script>
@@ -378,13 +379,17 @@ function canvasToFile(canvas) {
   );
 }
 
-// A phone photo is far bigger than the decoder wants, and the barcode is often a
-// small part of it. Produce progressively tighter centre crops plus a rotated
-// pass, so a code that fails wide can still be read.
-async function photoVariants(file) {
+// A phone photo is far bigger than the decoders want, and the barcode is often a
+// small part of it. Produce progressively tighter centre crops plus rotated
+// passes, keeping close to native resolution — a 1D barcode needs several
+// pixels per bar to survive.
+let lastPhotoSize = '–';
+
+async function photoCanvases(file) {
   const img = await loadImage(file);
   const W = img.naturalWidth, H = img.naturalHeight;
-  const MAX = 2000;
+  lastPhotoSize = W + '×' + H;
+  const MAX = 2400;
   const canvases = [];
 
   const add = (frac, rotate) => {
@@ -393,7 +398,7 @@ async function photoVariants(file) {
     const scale = Math.min(1, MAX / Math.max(sw, sh));
     const w = Math.round(sw * scale), h = Math.round(sh * scale);
     const c = document.createElement('canvas');
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (rotate) {
       c.width = h; c.height = w;
       ctx.translate(h / 2, w / 2);
@@ -407,11 +412,45 @@ async function photoVariants(file) {
   };
 
   add(1, false);
-  add(0.6, false);
+  add(0.75, false);
+  add(0.5, false);
   add(0.35, false);
   add(1, true);
+  add(0.5, true);
 
-  return Promise.all(canvases.map(canvasToFile));
+  return canvases;
+}
+
+// ZXing reads straight off a canvas, so we control the resolution completely
+// instead of going through another library's image scaling.
+let zxingReader = null;
+function getZxingReader() {
+  if (zxingReader !== null) return zxingReader || null;
+  try {
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
+      ZXing.BarcodeFormat.CODE_128,
+    ]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    zxingReader = new ZXing.BrowserMultiFormatReader(hints);
+  } catch {
+    zxingReader = false;
+  }
+  return zxingReader || null;
+}
+
+function zxingDecode(canvas) {
+  const reader = getZxingReader();
+  if (!reader) return null;
+  try {
+    const res = reader.decodeFromCanvas(canvas);
+    const text = res && res.getText ? res.getText() : null;
+    return text || null;
+  } catch {
+    return null;
+  }
 }
 
 function decodeOne(file) {
@@ -427,13 +466,27 @@ function decodeOne(file) {
 }
 
 async function decodePhoto(file, onProgress) {
-  const variants = await photoVariants(file);
-  for (let i = 0; i < variants.length; i++) {
-    if (onProgress) onProgress(i + 1, variants.length);
+  const canvases = await photoCanvases(file);
+  const total = canvases.length * 2;
+  let step = 0;
+  const tick = () => { step++; if (onProgress) onProgress(step, total); };
+
+  // Pass 1 — ZXing, straight off the canvas.
+  for (const canvas of canvases) {
+    tick();
+    const text = zxingDecode(canvas);
+    if (text) return text;
+    await new Promise(r => setTimeout(r, 0)); // let the button repaint
+  }
+
+  // Pass 2 — html5-qrcode, in case ZXing is unavailable or reads it differently.
+  for (const canvas of canvases) {
+    tick();
     try {
-      return await decodeOne(variants[i]);
+      return await decodeOne(await canvasToFile(canvas));
     } catch {}
   }
+
   throw new Error('no barcode found');
 }
 
@@ -461,6 +514,9 @@ function initScanner() {
         <div class="result-card">
           <div style="font-size:18px;font-weight:700;color:var(--muted)">Ingen streckkod hittades</div>
           <div style="font-size:14px;color:var(--muted);margin-top:8px">Ta ett nytt foto — närmare och skarpare.</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;opacity:.7">
+            ZXing: ${getZxingReader() ? 'ja' : 'nej'} · foto: ${lastPhotoSize}
+          </div>
           <button class="btn" style="margin-top:20px" onclick="resumeScan()">Försök igen</button>
         </div>`;
     } finally {
