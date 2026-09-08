@@ -6,7 +6,7 @@ on:
     paths:
       - 'gameboxes/**'
       - 'gameboxesscanner/**'
-
+      - 'gameboxeslist/**'
 jobs:
   deploy-overview:
     runs-on: ubuntu-latest
