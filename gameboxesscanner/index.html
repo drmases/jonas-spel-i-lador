@@ -143,7 +143,7 @@
   <div id="reader">
     <button class="btn" id="capture-btn" style="font-size:18px;padding:22px">📷 Ta foto av streckkoden</button>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v9)</span>
+      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v10)</span>
     </p>
     <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
   </div>
@@ -233,7 +233,6 @@
   </button>
 </nav>
 
-<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="games.js"></script>
 <script>
@@ -425,6 +424,40 @@ async function photoCanvases(file) {
   return canvases;
 }
 
+// Load ZXing at runtime across a few candidate URLs. A single pinned <script>
+// src is one 404 away from silently disabling the whole decoder, which is
+// exactly what happened before.
+const ZXING_URLS = [
+  'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js',
+  'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js',
+  'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js',
+  'https://cdn.jsdelivr.net/npm/@zxing/library/umd/index.min.js',
+  'https://unpkg.com/@zxing/library/umd/index.min.js',
+];
+
+let zxingLoad = null;
+function ensureZXing() {
+  if (typeof ZXing !== 'undefined') return Promise.resolve(true);
+  if (zxingLoad) return zxingLoad;
+  zxingLoad = (async () => {
+    for (const url of ZXING_URLS) {
+      try {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = url;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error('load failed'));
+          document.head.appendChild(s);
+        });
+        if (typeof ZXing !== 'undefined') { zxingSource = url; return true; }
+      } catch {}
+    }
+    return false;
+  })();
+  return zxingLoad;
+}
+let zxingSource = '';
+
 // Use ZXing's core reader rather than its browser wrapper: the wrapper's
 // canvas helper does not exist in every release, and this way we hand it
 // pixels at exactly the resolution we chose.
@@ -530,6 +563,7 @@ function decodeOne(file) {
 
 async function decodePhoto(file, onProgress) {
   lastDecodeError = '';
+  if (!(await ensureZXing())) lastDecodeError = 'ZXing kunde inte laddas';
   const canvases = await photoCanvases(file);
   const fallback = canvases.slice(0, 4); // html5-qrcode is slow; a few is enough
   const total = canvases.length * 2 + fallback.length;
@@ -590,7 +624,7 @@ function initScanner() {
           <div style="font-size:18px;font-weight:700;color:var(--muted)">Ingen streckkod hittades</div>
           <div style="font-size:14px;color:var(--muted);margin-top:8px">Ta ett nytt foto — närmare och skarpare.</div>
           <div style="font-size:11px;color:var(--muted);margin-top:8px;opacity:.7">
-            foto: ${lastPhotoSize}${lastDecodeError ? ' · fel: ' + lastDecodeError : ' · ZXing svarade NotFound'}
+            foto: ${lastPhotoSize} · ZXing: ${zxingSource ? zxingSource.split('/')[4] : 'ej laddad'}${lastDecodeError ? ' · fel: ' + lastDecodeError : ' · svarade NotFound'}
           </div>
           <button class="btn" style="margin-top:20px" onclick="resumeScan()">Försök igen</button>
         </div>`;

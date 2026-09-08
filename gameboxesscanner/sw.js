@@ -1,16 +1,19 @@
-const CACHE = 'gameboxesscanner-v9';
+const CACHE = 'gameboxesscanner-v10';
 const ASSETS = [
   '/gameboxesscanner/',
   '/gameboxesscanner/index.html',
   '/gameboxesscanner/games.js',
   '/gameboxesscanner/manifest.json',
   'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
-  'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js',
 ];
 
+// Cache entries one at a time: addAll rejects the whole install if a single
+// URL fails, which would leave the app with no service worker at all.
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then(c => Promise.all(ASSETS.map(u => c.add(u).catch(() => {}))))
+      .then(() => self.skipWaiting())
   );
 });
 
