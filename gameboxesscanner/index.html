@@ -143,7 +143,7 @@
   <div id="reader">
     <button class="btn" id="capture-btn" style="font-size:18px;padding:22px">📷 Ta foto av streckkoden</button>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v8)</span>
+      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v9)</span>
     </p>
     <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
   </div>
@@ -425,24 +425,55 @@ async function photoCanvases(file) {
   return canvases;
 }
 
-// ZXing reads straight off a canvas, so we control the resolution completely
-// instead of going through another library's image scaling.
-let zxingReader = null;
-function getZxingReader() {
-  if (zxingReader !== null) return zxingReader || null;
+// Use ZXing's core reader rather than its browser wrapper: the wrapper's
+// canvas helper does not exist in every release, and this way we hand it
+// pixels at exactly the resolution we chose.
+let zxingHints = null;
+function getHints() {
+  if (zxingHints) return zxingHints;
+  const h = new Map();
+  h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+    ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
+    ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
+    ZXing.BarcodeFormat.CODE_128,
+  ]);
+  h.set(ZXing.DecodeHintType.TRY_HARDER, true);
+  zxingHints = h;
+  return h;
+}
+
+let coreReader = null;
+function getCoreReader() {
+  if (coreReader !== null) return coreReader || null;
   try {
-    const hints = new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-      ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
-      ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
-      ZXing.BarcodeFormat.CODE_128,
-    ]);
-    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-    zxingReader = new ZXing.BrowserMultiFormatReader(hints);
-  } catch {
-    zxingReader = false;
+    coreReader = new ZXing.MultiFormatReader();
+    coreReader.setHints(getHints());
+  } catch (err) {
+    coreReader = false;
+    if (!lastDecodeError) lastDecodeError = 'ZXing init: ' + ((err && err.message) || '');
   }
-  return zxingReader || null;
+  return coreReader || null;
+}
+
+// RGBLuminanceSource accepts either raw RGBA or a ready luminance plane
+// depending on the build, so fall back to greyscaling ourselves if it objects.
+let luminanceMode = 'rgba';
+
+function bitmapFrom(canvas) {
+  const w = canvas.width, h = canvas.height;
+  const data = canvas.getContext('2d', { willReadFrequently: true })
+    .getImageData(0, 0, w, h).data;
+  let source;
+  if (luminanceMode === 'gray') {
+    const gray = new Uint8ClampedArray(w * h);
+    for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
+      gray[i] = (data[p] * 306 + data[p + 1] * 601 + data[p + 2] * 117) >> 10;
+    }
+    source = new ZXing.RGBLuminanceSource(gray, w, h);
+  } else {
+    source = new ZXing.RGBLuminanceSource(data, w, h);
+  }
+  return new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
 }
 
 // NotFoundException just means "no code in this crop". Anything else means the
@@ -450,23 +481,39 @@ function getZxingReader() {
 let lastDecodeError = '';
 
 function zxingDecode(canvas) {
-  const reader = getZxingReader();
-  if (!reader) { lastDecodeError = 'reader saknas'; return null; }
-  if (typeof reader.decodeFromCanvas !== 'function') {
-    lastDecodeError = 'decodeFromCanvas saknas';
-    return null;
-  }
-  try {
-    const res = reader.decodeFromCanvas(canvas);
-    const text = res && res.getText ? res.getText() : null;
-    return text || null;
-  } catch (err) {
-    const name = (err && (err.name || (err.constructor && err.constructor.name))) || 'Error';
-    if (!/NotFound/i.test(name) && !lastDecodeError) {
-      lastDecodeError = name + ': ' + ((err && err.message) || '').slice(0, 80);
+  const reader = getCoreReader();
+  if (!reader) return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = reader.decode(bitmapFrom(canvas), getHints());
+      const text = res && res.getText ? res.getText() : null;
+      if (text) return text;
+      return null;
+    } catch (err) {
+      const name = (err && (err.name || (err.constructor && err.constructor.name))) || 'Error';
+      if (/NotFound/i.test(name)) return null;
+      // Not a "no code here" result — the call itself is unhappy. Greyscale
+      // ourselves and retry once before giving up on this canvas.
+      if (luminanceMode === 'rgba') { luminanceMode = 'gray'; continue; }
+      if (!lastDecodeError) {
+        lastDecodeError = name + ': ' + ((err && err.message) || '').slice(0, 60);
+      }
+      return null;
+    } finally {
+      try { reader.reset(); } catch {}
     }
-    return null;
   }
+  return null;
+}
+
+function rotateCanvas(src) {
+  const r = document.createElement('canvas');
+  r.width = src.height; r.height = src.width;
+  const ctx = r.getContext('2d', { willReadFrequently: true });
+  ctx.translate(src.height / 2, src.width / 2);
+  ctx.rotate(Math.PI / 2);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return r;
 }
 
 function decodeOne(file) {
@@ -485,19 +532,29 @@ async function decodePhoto(file, onProgress) {
   lastDecodeError = '';
   const canvases = await photoCanvases(file);
   const fallback = canvases.slice(0, 4); // html5-qrcode is slow; a few is enough
-  const total = canvases.length + fallback.length;
+  const total = canvases.length * 2 + fallback.length;
   let step = 0;
   const tick = () => { step++; if (onProgress) onProgress(step, total); };
+  const breathe = () => new Promise(r => setTimeout(r, 0));
 
-  // Pass 1 — ZXing, straight off the canvas.
+  // Pass 1 — as shot.
   for (const canvas of canvases) {
     tick();
     const text = zxingDecode(canvas);
     if (text) return text;
-    await new Promise(r => setTimeout(r, 0)); // let the button repaint
+    await breathe();
   }
 
-  // Pass 2 — html5-qrcode, in case ZXing reads it differently.
+  // Pass 2 — rotated. ZXing scans horizontal lines, so a barcode running up
+  // the side of the box is invisible until the image is turned.
+  for (const canvas of canvases) {
+    tick();
+    const text = zxingDecode(rotateCanvas(canvas));
+    if (text) return text;
+    await breathe();
+  }
+
+  // Pass 3 — html5-qrcode, in case it reads it differently.
   for (const canvas of fallback) {
     tick();
     try {
