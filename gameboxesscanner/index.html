@@ -143,7 +143,7 @@
   <div id="reader">
     <button class="btn" id="capture-btn" style="font-size:18px;padding:22px">📷 Ta foto av streckkoden</button>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v10)</span>
+      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v11)</span>
     </p>
     <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
   </div>
@@ -388,7 +388,7 @@ async function photoCanvases(file) {
   const img = await loadImage(file);
   const W = img.naturalWidth, H = img.naturalHeight;
   lastPhotoSize = W + '×' + H;
-  const MAX = 2400;
+  const MAX = 1800;
   const canvases = [];
 
   const add = (sx, sy, sw, sh) => {
@@ -488,52 +488,49 @@ function getCoreReader() {
   return coreReader || null;
 }
 
-// RGBLuminanceSource accepts either raw RGBA or a ready luminance plane
-// depending on the build, so fall back to greyscaling ourselves if it objects.
-let luminanceMode = 'rgba';
+// ZXing's exception classes are minified, so the class name is useless for
+// telling "no code in this crop" from a genuinely broken call. The message is
+// stable; match on that too.
+function isNotFound(err) {
+  const name = (err && (err.name || (err.constructor && err.constructor.name))) || '';
+  const msg = (err && err.message) || '';
+  return /NotFound/i.test(name) || /No MultiFormat Readers|not found/i.test(msg);
+}
 
-function bitmapFrom(canvas) {
+function decodeWith(canvas, Binarizer) {
   const w = canvas.width, h = canvas.height;
   const data = canvas.getContext('2d', { willReadFrequently: true })
     .getImageData(0, 0, w, h).data;
-  let source;
-  if (luminanceMode === 'gray') {
-    const gray = new Uint8ClampedArray(w * h);
-    for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
-      gray[i] = (data[p] * 306 + data[p + 1] * 601 + data[p + 2] * 117) >> 10;
-    }
-    source = new ZXing.RGBLuminanceSource(gray, w, h);
-  } else {
-    source = new ZXing.RGBLuminanceSource(data, w, h);
+  const source = new ZXing.RGBLuminanceSource(data, w, h);
+  const bitmap = new ZXing.BinaryBitmap(new Binarizer(source));
+  const reader = getCoreReader();
+  try {
+    const res = reader.decode(bitmap, getHints());
+    return res && res.getText ? res.getText() : null;
+  } finally {
+    try { reader.reset(); } catch {}
   }
-  return new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
 }
 
 // NotFoundException just means "no code in this crop". Anything else means the
 // call itself is wrong, which is worth seeing rather than swallowing.
 let lastDecodeError = '';
 
+// Two binarizers, because they fail on different images: Hybrid is tuned for
+// 2D codes and uneven lighting, GlobalHistogram often wins on a flat, evenly
+// lit 1D barcode — which is exactly what a game box gives you.
 function zxingDecode(canvas) {
-  const reader = getCoreReader();
-  if (!reader) return null;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  if (!getCoreReader()) return null;
+  const binarizers = [ZXing.HybridBinarizer, ZXing.GlobalHistogramBinarizer].filter(Boolean);
+  for (const Binarizer of binarizers) {
     try {
-      const res = reader.decode(bitmapFrom(canvas), getHints());
-      const text = res && res.getText ? res.getText() : null;
+      const text = decodeWith(canvas, Binarizer);
       if (text) return text;
-      return null;
     } catch (err) {
-      const name = (err && (err.name || (err.constructor && err.constructor.name))) || 'Error';
-      if (/NotFound/i.test(name)) return null;
-      // Not a "no code here" result — the call itself is unhappy. Greyscale
-      // ourselves and retry once before giving up on this canvas.
-      if (luminanceMode === 'rgba') { luminanceMode = 'gray'; continue; }
-      if (!lastDecodeError) {
+      if (!isNotFound(err) && !lastDecodeError) {
+        const name = (err && (err.name || (err.constructor && err.constructor.name))) || 'Error';
         lastDecodeError = name + ': ' + ((err && err.message) || '').slice(0, 60);
       }
-      return null;
-    } finally {
-      try { reader.reset(); } catch {}
     }
   }
   return null;
@@ -624,7 +621,7 @@ function initScanner() {
           <div style="font-size:18px;font-weight:700;color:var(--muted)">Ingen streckkod hittades</div>
           <div style="font-size:14px;color:var(--muted);margin-top:8px">Ta ett nytt foto — närmare och skarpare.</div>
           <div style="font-size:11px;color:var(--muted);margin-top:8px;opacity:.7">
-            foto: ${lastPhotoSize} · ZXing: ${zxingSource ? zxingSource.split('/')[4] : 'ej laddad'}${lastDecodeError ? ' · fel: ' + lastDecodeError : ' · svarade NotFound'}
+            foto: ${lastPhotoSize} · ZXing: ${zxingSource ? (zxingSource.match(/library@([0-9.]+)/) || [0,'?'])[1] : 'ej laddad'}${lastDecodeError ? ' · fel: ' + lastDecodeError : ' · svarade NotFound'}
           </div>
           <button class="btn" style="margin-top:20px" onclick="resumeScan()">Försök igen</button>
         </div>`;
