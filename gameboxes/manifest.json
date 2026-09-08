@@ -1,9 +1,1 @@
-{
-  "name": "Gameboxes – Spellådor",
-  "short_name": "Gameboxes",
-  "start_url": "/gameboxes/",
-  "display": "standalone",
-  "background_color": "#0e0c09",
-  "theme_color": "#c9973a",
-  "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"}]
-}
+{"name":"Spelsamling","short_name":"Spelsamling","start_url":"/gameboxes/","display":"browser"}
