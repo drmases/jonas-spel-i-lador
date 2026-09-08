@@ -143,13 +143,9 @@
   <div id="live-wrap">
     <button class="btn" id="live-btn">🎥 Starta kameran</button>
     <div id="live-reader"></div>
-  </div>
-  <div id="reader">
-    <button class="btn btn-secondary" id="capture-btn">📷 Ta foto istället</button>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stor och skarp i bild. <span style="opacity:.6">(v12)</span>
+      Håll streckkoden stadigt i bild.
     </p>
-    <input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
   </div>
   <div id="scan-result"></div>
 </div>
@@ -358,261 +354,13 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// ── Scanner (photo based — works reliably on iOS) ─────────────────────────────
-// Decodes a barcode from a photo the native camera app captured.
+// ── Scanner ──────────────────────────────────────────────────────────────────
+
 const BARCODE_FORMATS = [
   Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
   Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
   Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION, Html5QrcodeSupportedFormats.CODE_128,
 ];
-
-function loadImage(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
-    img.src = url;
-  });
-}
-
-function canvasToFile(canvas) {
-  return new Promise(resolve =>
-    canvas.toBlob(b => resolve(new File([b], 'scan.png', { type: 'image/png' })), 'image/png')
-  );
-}
-
-// A phone photo is far bigger than the decoders want, and the barcode is often a
-// small part of it. Produce progressively tighter centre crops plus rotated
-// passes, keeping close to native resolution — a 1D barcode needs several
-// pixels per bar to survive.
-let lastPhotoSize = '–';
-
-async function photoCanvases(file) {
-  const img = await loadImage(file);
-  const W = img.naturalWidth, H = img.naturalHeight;
-  lastPhotoSize = W + '×' + H;
-  const MAX = 1800;
-  const canvases = [];
-
-  const add = (sx, sy, sw, sh) => {
-    const scale = Math.min(1, MAX / Math.max(sw, sh));
-    const w = Math.max(1, Math.round(sw * scale));
-    const h = Math.max(1, Math.round(sh * scale));
-    const c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    c.getContext('2d', { willReadFrequently: true })
-      .drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
-    canvases.push(c);
-  };
-
-  // Whole frame first — usually enough when the code is held close.
-  add(0, 0, W, H);
-
-  // Then sweep the frame in overlapping tiles, so a code sitting off to one
-  // side is covered too. Centre crops alone miss those entirely.
-  const grid = (n) => {
-    const overlap = 0.25;
-    const tw = W / (n - (n - 1) * overlap);
-    const th = H / (n - (n - 1) * overlap);
-    const stepX = tw * (1 - overlap), stepY = th * (1 - overlap);
-    for (let r = 0; r < n; r++) {
-      for (let col = 0; col < n; col++) {
-        add(Math.round(col * stepX), Math.round(r * stepY), Math.round(tw), Math.round(th));
-      }
-    }
-  };
-  grid(2);
-  grid(3);
-
-  return canvases;
-}
-
-// Load ZXing at runtime across a few candidate URLs. A single pinned <script>
-// src is one 404 away from silently disabling the whole decoder, which is
-// exactly what happened before.
-const ZXING_URLS = [
-  'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js',
-  'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js',
-  'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js',
-  'https://cdn.jsdelivr.net/npm/@zxing/library/umd/index.min.js',
-  'https://unpkg.com/@zxing/library/umd/index.min.js',
-];
-
-let zxingLoad = null;
-function ensureZXing() {
-  if (typeof ZXing !== 'undefined') return Promise.resolve(true);
-  if (zxingLoad) return zxingLoad;
-  zxingLoad = (async () => {
-    for (const url of ZXING_URLS) {
-      try {
-        await new Promise((resolve, reject) => {
-          const s = document.createElement('script');
-          s.src = url;
-          s.onload = resolve;
-          s.onerror = () => reject(new Error('load failed'));
-          document.head.appendChild(s);
-        });
-        if (typeof ZXing !== 'undefined') { zxingSource = url; return true; }
-      } catch {}
-    }
-    return false;
-  })();
-  return zxingLoad;
-}
-let zxingSource = '';
-
-// Use ZXing's core reader rather than its browser wrapper: the wrapper's
-// canvas helper does not exist in every release, and this way we hand it
-// pixels at exactly the resolution we chose.
-let zxingHints = null;
-function getHints() {
-  if (zxingHints) return zxingHints;
-  const h = new Map();
-  h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-    ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
-    ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
-    ZXing.BarcodeFormat.CODE_128,
-  ]);
-  h.set(ZXing.DecodeHintType.TRY_HARDER, true);
-  zxingHints = h;
-  return h;
-}
-
-let coreReader = null;
-function getCoreReader() {
-  if (coreReader !== null) return coreReader || null;
-  try {
-    coreReader = new ZXing.MultiFormatReader();
-    coreReader.setHints(getHints());
-  } catch (err) {
-    coreReader = false;
-    if (!lastDecodeError) lastDecodeError = 'ZXing init: ' + ((err && err.message) || '');
-  }
-  return coreReader || null;
-}
-
-// ZXing's exception classes are minified, so the class name is useless for
-// telling "no code in this crop" from a genuinely broken call. The message is
-// stable; match on that too.
-function isNotFound(err) {
-  const name = (err && (err.name || (err.constructor && err.constructor.name))) || '';
-  const msg = (err && err.message) || '';
-  return /NotFound/i.test(name) || /No MultiFormat Readers|not found/i.test(msg);
-}
-
-// RGBLuminanceSource wants one byte per pixel. Handing it raw RGBA makes it
-// read a quarter of the buffer and treat R,G,B,A as four adjacent pixels —
-// noise, and a guaranteed NotFound however good the photo is. Greyscale here.
-function luminanceOf(canvas, mode) {
-  const w = canvas.width, h = canvas.height;
-  const data = canvas.getContext('2d', { willReadFrequently: true })
-    .getImageData(0, 0, w, h).data;
-  if (mode === 'rgba') return new ZXing.RGBLuminanceSource(data, w, h);
-  const gray = new Uint8ClampedArray(w * h);
-  for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
-    gray[i] = (data[p] * 306 + data[p + 1] * 601 + data[p + 2] * 117) >> 10;
-  }
-  return new ZXing.RGBLuminanceSource(gray, w, h);
-}
-
-function decodeWith(canvas, Binarizer, mode) {
-  const bitmap = new ZXing.BinaryBitmap(new Binarizer(luminanceOf(canvas, mode)));
-  const reader = getCoreReader();
-  try {
-    const res = reader.decode(bitmap, getHints());
-    return res && res.getText ? res.getText() : null;
-  } finally {
-    try { reader.reset(); } catch {}
-  }
-}
-
-// NotFoundException just means "no code in this crop". Anything else means the
-// call itself is wrong, which is worth seeing rather than swallowing.
-let lastDecodeError = '';
-
-// Two binarizers, because they fail on different images: Hybrid is tuned for
-// 2D codes and uneven lighting, GlobalHistogram often wins on a flat, evenly
-// lit 1D barcode — which is exactly what a game box gives you.
-function zxingDecode(canvas, withRgba) {
-  if (!getCoreReader()) return null;
-  const binarizers = [ZXing.HybridBinarizer, ZXing.GlobalHistogramBinarizer].filter(Boolean);
-  const attempts = binarizers.map(B => [B, 'gray']);
-  if (withRgba) binarizers.forEach(B => attempts.push([B, 'rgba']));
-  for (const [Binarizer, mode] of attempts) {
-    try {
-      const text = decodeWith(canvas, Binarizer, mode);
-      if (text) return text;
-    } catch (err) {
-      if (!isNotFound(err) && !lastDecodeError) {
-        const name = (err && (err.name || (err.constructor && err.constructor.name))) || 'Error';
-        lastDecodeError = name + ': ' + ((err && err.message) || '').slice(0, 60);
-      }
-    }
-  }
-  return null;
-}
-
-function rotateCanvas(src) {
-  const r = document.createElement('canvas');
-  r.width = src.height; r.height = src.width;
-  const ctx = r.getContext('2d', { willReadFrequently: true });
-  ctx.translate(src.height / 2, src.width / 2);
-  ctx.rotate(Math.PI / 2);
-  ctx.drawImage(src, -src.width / 2, -src.height / 2);
-  return r;
-}
-
-function decodeOne(file) {
-  const el = document.createElement('div');
-  el.id = 'decode-scratch-' + Math.random().toString(36).slice(2);
-  // Must have real dimensions — the decoder scales the image down to fit this
-  // container, and a barcode squeezed to a few hundred pixels is unreadable.
-  el.style.cssText = 'position:absolute;left:-10000px;top:0;width:2000px;height:2000px;';
-  document.body.appendChild(el);
-  const reader = new Html5Qrcode(el.id, { formatsToSupport: BARCODE_FORMATS, verbose: false });
-  return reader.scanFile(file, false)
-    .finally(() => { try { reader.clear(); } catch {} el.remove(); });
-}
-
-async function decodePhoto(file, onProgress) {
-  lastDecodeError = '';
-  if (!(await ensureZXing())) lastDecodeError = 'ZXing kunde inte laddas';
-  const canvases = await photoCanvases(file);
-  const fallback = canvases.slice(0, 4); // html5-qrcode is slow; a few is enough
-  const total = canvases.length * 2 + fallback.length;
-  let step = 0;
-  const tick = () => { step++; if (onProgress) onProgress(step, total); };
-  const breathe = () => new Promise(r => setTimeout(r, 0));
-
-  // Pass 1 — as shot. Full frame also gets an RGBA attempt as insurance.
-  for (let i = 0; i < canvases.length; i++) {
-    const canvas = canvases[i];
-    tick();
-    const text = zxingDecode(canvas, i === 0);
-    if (text) return text;
-    await breathe();
-  }
-
-  // Pass 2 — rotated. ZXing scans horizontal lines, so a barcode running up
-  // the side of the box is invisible until the image is turned.
-  for (const canvas of canvases) {
-    tick();
-    const text = zxingDecode(rotateCanvas(canvas));
-    if (text) return text;
-    await breathe();
-  }
-
-  // Pass 3 — html5-qrcode, in case it reads it differently.
-  for (const canvas of fallback) {
-    tick();
-    try {
-      return await decodeOne(await canvasToFile(canvas));
-    } catch {}
-  }
-
-  throw new Error('no barcode found');
-}
 
 // Live scanning is what actually decoded a code on this phone; the black
 // preview was a rendering problem, not a decoding one. Give the video real
@@ -674,39 +422,6 @@ function initScanner() {
     liveBtn.dataset.wired = '1';
     liveBtn.addEventListener('click', startLive);
   }
-  const btn = document.getElementById('capture-btn');
-  const input = document.getElementById('capture-input');
-  if (!btn || btn.dataset.wired) return;
-  btn.dataset.wired = '1';
-
-  btn.addEventListener('click', () => input.click());
-
-  input.addEventListener('change', async () => {
-    const file = input.files && input.files[0];
-    input.value = '';
-    if (!file) return;
-    btn.disabled = true;
-    btn.textContent = 'Läser av…';
-    try {
-      const ean = await decodePhoto(file, (i, n) => { btn.textContent = `Läser av… ${i}/${n}`; });
-      handleScanResult(ean);
-    } catch {
-      const resultEl = document.getElementById('scan-result');
-      resultEl.style.display = 'block';
-      resultEl.innerHTML = `
-        <div class="result-card">
-          <div style="font-size:18px;font-weight:700;color:var(--muted)">Ingen streckkod hittades</div>
-          <div style="font-size:14px;color:var(--muted);margin-top:8px">Ta ett nytt foto — närmare och skarpare.</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:8px;opacity:.7">
-            foto: ${lastPhotoSize} · ZXing: ${zxingSource ? (zxingSource.match(/library@([0-9.]+)/) || [0,'?'])[1] : 'ej laddad'}${lastDecodeError ? ' · fel: ' + lastDecodeError : ' · svarade NotFound'}
-          </div>
-          <button class="btn" style="margin-top:20px" onclick="resumeScan()">Försök igen</button>
-        </div>`;
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '📷 Ta foto av streckkoden';
-    }
-  });
 }
 
 function handleScanResult(ean) {
@@ -858,37 +573,53 @@ function clearForm() {
   document.getElementById('form-status').value = '';
 }
 
-// Mini scan button in form — same photo flow
-const miniInput = document.createElement('input');
-miniInput.type = 'file';
-miniInput.accept = 'image/*';
-miniInput.capture = 'environment';
-miniInput.hidden = true;
-document.body.appendChild(miniInput);
+// Mini scan button in form — opens the live scanner in an overlay and drops
+// the code straight into the EAN field.
+document.getElementById('form-scan-btn').addEventListener('click', async () => {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(14,12,9,.96);z-index:200;'
+    + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;';
+  overlay.innerHTML = '<div id="mini-reader" style="width:100%;max-width:380px"></div>'
+    + '<button class="btn btn-secondary" id="close-overlay" style="max-width:380px">Avbryt</button>';
+  document.body.appendChild(overlay);
 
-document.getElementById('form-scan-btn').addEventListener('click', () => miniInput.click());
+  const mini = new Html5Qrcode('mini-reader', { formatsToSupport: BARCODE_FORMATS, verbose: false });
 
-miniInput.addEventListener('change', async () => {
-  const file = miniInput.files && miniInput.files[0];
-  miniInput.value = '';
-  if (!file) return;
-  const btn = document.getElementById('form-scan-btn');
-  btn.disabled = true;
-  btn.textContent = '…';
+  const close = async () => {
+    try { await mini.stop(); } catch {}
+    try { mini.clear(); } catch {}
+    overlay.remove();
+  };
+
+  document.getElementById('close-overlay').addEventListener('click', close);
+
   try {
-    const ean = await decodePhoto(file);
-    document.getElementById('form-ean').value = ean;
-    const game = findByEan(ean);
-    if (game) {
-      document.getElementById('form-name').value = game.namn;
-      document.getElementById('form-box').value = game.låda;
-      document.getElementById('form-status').value = game.status || '';
+    await mini.start(
+      { facingMode: 'environment' },
+      { fps: 10, aspectRatio: 1.333 },
+      (ean) => {
+        document.getElementById('form-ean').value = ean;
+        const game = findByEan(ean);
+        if (game) {
+          document.getElementById('form-name').value = game.namn;
+          document.getElementById('form-box').value = game.låda;
+          document.getElementById('form-status').value = game.status || '';
+        }
+        close();
+      },
+      () => {}
+    );
+    const v = overlay.querySelector('video');
+    if (v) {
+      v.setAttribute('playsinline', 'true');
+      v.style.width = '100%';
+      v.style.height = 'auto';
+      v.style.display = 'block';
+      try { await v.play(); } catch {}
     }
-  } catch {
-    alert('Ingen streckkod hittades i fotot. Försök igen — närmare och skarpare.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '📷';
+  } catch (err) {
+    alert('Kameran gick inte att starta: ' + ((err && err.message) || err));
+    overlay.remove();
   }
 });
 
