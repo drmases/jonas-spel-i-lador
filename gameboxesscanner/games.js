@@ -231,11 +231,9 @@ window.GAMES = [
   // Garderob
   {ean:null, namn:"Rising Sun", låda:"Garderob", status:null},
   {ean:null, namn:"Bandu", låda:"Garderob", status:null},
-  {ean:null, namn:"Stronghold", låda:"Garderob", status:null},
   {ean:null, namn:"Carson City", låda:"Garderob", status:null},
   {ean:null, namn:"Barrage", låda:"Garderob", status:null},
   {ean:null, namn:"Kanban EV", låda:"Garderob", status:null},
-  {ean:null, namn:"The Gallerist", låda:"Garderob", status:null},
   {ean:null, namn:"Imperial", låda:"Garderob", status:null},
   {ean:null, namn:"Concordia", låda:"Garderob", status:null},
   {ean:null, namn:"Coffee Traders", låda:"Garderob", status:null},
