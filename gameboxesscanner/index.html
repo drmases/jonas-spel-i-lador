@@ -160,7 +160,7 @@
     <button class="btn" id="live-btn">🎥 Starta kameran</button>
     <div id="live-reader"></div>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stadigt i bild, vågrätt och utan reflex.
+      Håll streckkoden vågrätt och gå nära.<br>Läser den inte: skugga koden med handen — <em>för mycket</em> ljus bränner ut strecken.
     </p>
     <div class="ean-row" style="margin-top:14px">
       <input class="field" id="manual-ean" type="text" inputmode="numeric"
@@ -490,6 +490,27 @@ async function startLive() {
     v.style.display = 'block';
     try { await v.play(); } catch {}
   }
+  // Where the browser allows it (Android, not iOS Safari) ask for continuous
+  // focus and a darker exposure: a blown-out white label loses the bars
+  // entirely, and no amount of post-processing brings clipped pixels back.
+  try {
+    const track = v && v.srcObject && v.srcObject.getVideoTracks
+      ? v.srcObject.getVideoTracks()[0] : null;
+    if (track && track.getCapabilities) {
+      const caps = track.getCapabilities() || {};
+      const advanced = [];
+      if (caps.focusMode && caps.focusMode.indexOf('continuous') >= 0) {
+        advanced.push({ focusMode: 'continuous' });
+      }
+      if (caps.exposureCompensation) {
+        const ec = caps.exposureCompensation;
+        const step = ec.step || 0.5;
+        advanced.push({ exposureCompensation: Math.max(ec.min, -2 * step) });
+      }
+      if (advanced.length) await track.applyConstraints({ advanced });
+    }
+  } catch {}
+
   btn.textContent = '⏹ Stoppa kameran';
 }
 
