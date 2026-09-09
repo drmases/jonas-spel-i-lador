@@ -275,7 +275,7 @@ function allGames() {
     let found = false;
     // Match by EAN first
     if (o.ean) {
-      for (const [k, v] of map) { if (v.ean === o.ean) { map.set(k, {...v, ...o}); found = true; break; } }
+      for (const [k, v] of map) { if (sameEan(v.ean, o.ean)) { map.set(k, {...v, ...o}); found = true; break; } }
     }
     // Fall back to name match (handles adding EAN to a seed entry with ean:null)
     if (!found && o.namn) {
@@ -284,24 +284,38 @@ function allGames() {
       }
     }
     if (!found) {
-      const key = o.ean ? 'override_' + o.ean : o._id ? 'override_' + o._id : 'override_' + Math.random();
+      const key = o.ean ? 'override_' + normEan(o.ean) : o._id ? 'override_' + o._id : 'override_' + Math.random();
       map.set(key, o);
     }
   });
   return [...map.values()];
 }
 
+// The same product can be written two ways: UPC-A prints 12 digits, while a
+// scanner usually reports it as EAN-13 with a leading zero. Compare a
+// canonical form so a typed code still matches a scanned one.
+function normEan(v) {
+  let d = String(v == null ? '' : v).replace(/\D/g, '');
+  if (d.length === 13 && d[0] === '0') d = d.slice(1);
+  return d;
+}
+
+function sameEan(a, b) {
+  const x = normEan(a), y = normEan(b);
+  return !!x && x === y;
+}
+
 function findByEan(ean) {
   const overrides = loadOverrides();
-  const fromOverride = overrides.find(o => o.ean === ean);
+  const fromOverride = overrides.find(o => sameEan(o.ean, ean));
   if (fromOverride) return fromOverride;
-  return (window.GAMES || []).find(g => g.ean === ean) || null;
+  return (window.GAMES || []).find(g => sameEan(g.ean, ean)) || null;
 }
 
 function upsertOverride(game) {
   const overrides = loadOverrides();
   if (game.ean) {
-    const idx = overrides.findIndex(o => o.ean === game.ean);
+    const idx = overrides.findIndex(o => sameEan(o.ean, game.ean));
     if (idx >= 0) overrides[idx] = game; else overrides.push(game);
   } else {
     if (game._id) {
