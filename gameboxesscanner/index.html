@@ -261,6 +261,7 @@
       <option value="Q">Låda Q</option>
       <option value="R">Låda R</option>
       <option value="S">Låda S</option>
+      <option value="T">Låda T</option>
       <option value="Garderob">Garderob</option>
     </select>
   </div>
@@ -643,7 +644,7 @@ function handleScanResult(ean) {
             <label>Låda</label>
             <select class="field" id="quick-box">
               <option value="">Välj låda…</option>
-              ${['A','B','C','D','E','F','G','H','I','J1','J2','K','L','M','N','O','P','Q','R','S','Garderob']
+              ${['A','B','C','D','E','F','G','H','I','J1','J2','K','L','M','N','O','P','Q','R','S','T','Garderob']
                 .map(b => `<option value="${b}">${b === 'Garderob' ? 'Garderob' : 'Låda ' + b}</option>`).join('')}
             </select>
           </div>

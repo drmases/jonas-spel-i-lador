@@ -223,6 +223,11 @@ window.GAMES = [
   {ean:null, namn:"Raptor", låda:"S", status:null},
   {ean:null, namn:"City of Horror", låda:"S", status:null},
   {ean:null, namn:"Mall of Horror", låda:"S", status:null},
+  {ean:null, namn:"The Gallerist", låda:"T", status:null},
+  {ean:null, namn:"Space Hulk", låda:"T", status:null},
+  {ean:null, namn:"Stronghold", låda:"T", status:null},
+  {ean:null, namn:"Horrified", låda:"T", status:null},
+  {ean:null, namn:"Azul", låda:"T", status:null},
   // Garderob
   {ean:null, namn:"Rising Sun", låda:"Garderob", status:null},
   {ean:null, namn:"Bandu", låda:"Garderob", status:null},
