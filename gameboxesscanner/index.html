@@ -417,60 +417,80 @@ const BARCODE_FORMATS = [
 // height and let it play inline so iOS shows it.
 let liveScanner = null;
 
+let liveStarting = false;
+
 async function startLive() {
   const btn = document.getElementById('live-btn');
   const host = document.getElementById('live-reader');
+  if (liveStarting) return;
   if (liveScanner) { await stopLive(); return; }
+
+  liveStarting = true;
   host.style.minHeight = '300px';
   btn.textContent = 'Startar…';
-  try {
-    liveScanner = new Html5Qrcode('live-reader', {
-      formatsToSupport: BARCODE_FORMATS, verbose: false,
-    });
-    // Ask for a high resolution stream and scan only a wide band across the
-    // middle. Both raise the pixels-per-bar the decoder actually gets, which
-    // is what a 1D barcode lives or dies on.
-    const config = {
-      fps: 10,
-      qrbox: (w, h) => ({
-        width: Math.round(w * 0.92),
-        height: Math.round(Math.min(h * 0.6, Math.max(140, h * 0.35))),
-      }),
-    };
+
+  // Scan a wide band across the middle rather than the whole frame: it gives
+  // the decoder far more pixels per bar, which is what a 1D code needs.
+  const config = {
+    fps: 10,
+    qrbox: (w, h) => ({
+      width: Math.round(w * 0.92),
+      height: Math.round(Math.min(h * 0.6, Math.max(140, h * 0.35))),
+    }),
+  };
+  const onDecode = (text) => { stopLive(); handleScanResult(text); };
+
+  // A failed start leaves the instance mid-transition, and it will refuse to
+  // start again. Every attempt gets a fresh one.
+  const tryStart = async (constraints) => {
+    const s = new Html5Qrcode('live-reader', { formatsToSupport: BARCODE_FORMATS, verbose: false });
     try {
-      await liveScanner.start(
-        { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        config,
-        (text) => { stopLive(); handleScanResult(text); },
-        () => {}
-      );
-    } catch {
-      // Some devices reject the resolution hint outright — take what we get.
-      await liveScanner.start(
-        { facingMode: 'environment' },
-        config,
-        (text) => { stopLive(); handleScanResult(text); },
-        () => {}
-      );
+      await s.start(constraints, config, onDecode, () => {});
+      return s;
+    } catch (err) {
+      try { await s.stop(); } catch {}
+      try { s.clear(); } catch {}
+      host.innerHTML = '';
+      throw err;
     }
-    // iOS will not paint the preview unless the video plays inline.
-    const v = host.querySelector('video');
-    if (v) {
-      v.setAttribute('playsinline', 'true');
-      v.setAttribute('muted', 'true');
-      v.style.width = '100%';
-      v.style.height = 'auto';
-      v.style.display = 'block';
-      try { await v.play(); } catch {}
-    }
-    btn.textContent = '⏹ Stoppa kameran';
+  };
+
+  let firstErr = null;
+  try {
+    liveScanner = await tryStart({
+      facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 },
+    });
   } catch (err) {
-    liveScanner = null;
+    firstErr = err;
+    try {
+      liveScanner = await tryStart({ facingMode: 'environment' });
+    } catch {
+      liveScanner = null;
+    }
+  }
+
+  liveStarting = false;
+
+  if (!liveScanner) {
     host.style.minHeight = '';
     btn.textContent = '🎥 Starta kameran';
     host.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px;text-align:center">'
-      + 'Kameran gick inte att starta: ' + ((err && err.message) || err) + '</p>';
+      + 'Kameran gick inte att starta: '
+      + ((firstErr && firstErr.message) || firstErr || 'okänt fel') + '</p>';
+    return;
   }
+
+  // iOS will not paint the preview unless the video plays inline.
+  const v = host.querySelector('video');
+  if (v) {
+    v.setAttribute('playsinline', 'true');
+    v.setAttribute('muted', 'true');
+    v.style.width = '100%';
+    v.style.height = 'auto';
+    v.style.display = 'block';
+    try { await v.play(); } catch {}
+  }
+  btn.textContent = '⏹ Stoppa kameran';
 }
 
 async function stopLive() {
@@ -481,6 +501,7 @@ async function stopLive() {
     try { liveScanner.clear(); } catch {}
     liveScanner = null;
   }
+  liveStarting = false;
   host.innerHTML = '';
   host.style.minHeight = '';
   if (btn) btn.textContent = '🎥 Starta kameran';
