@@ -241,6 +241,17 @@
   <div id="all-games-list"></div>
 
   <hr class="divider">
+  <div id="sync">
+    <label>Synknyckel (delas mellan dina enheter)</label>
+    <div class="ean-row">
+      <input class="field" id="sync-key" type="password" placeholder="Nyckel från config.php" autocomplete="off">
+      <button class="scan-mini-btn" id="sync-save" title="Spara nyckel">💾</button>
+    </div>
+    <button class="btn btn-secondary" id="sync-now">🔄 Synka nu</button>
+    <p id="sync-msg" style="font-size:13px;color:var(--muted);margin-top:10px;text-align:center">Synk av.</p>
+  </div>
+
+  <hr class="divider">
   <div id="backup">
     <div id="backup-count" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
     <button class="btn btn-secondary" id="export-btn">⬇ Exportera koder</button>
@@ -601,7 +612,7 @@ function quickSave(ean) {
   const box = document.getElementById('quick-box').value;
   if (!name || !box) { alert('Fyll i namn och låda.'); return; }
   upsertOverride({ ean, namn: name, låda: box, status: null });
-  // Show result
+  syncNow(true);
   handleScanResult(ean);
 }
 
@@ -649,10 +660,74 @@ document.getElementById('form-save').addEventListener('click', () => {
   upsertOverride({ ean, namn: name, låda: box, status });
   clearForm();
   renderAllGames();
+  syncNow(true);
   alert('Sparat!');
 });
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
+
+// ── Sync ──────────────────────────────────────────────────────────────────────
+// localStorage is per-device, so a code scanned on the phone never reached the
+// desktop. Push the local entries to a small endpoint that merges them
+// server-side and hands back the union.
+const SYNC_KEY_STORE = 'gameboxes_sync_key';
+
+function syncKey() {
+  try { return localStorage.getItem(SYNC_KEY_STORE) || ''; } catch { return ''; }
+}
+
+function syncStatus(text) {
+  const el = document.getElementById('sync-msg');
+  if (el) el.textContent = text;
+}
+
+async function syncNow(quiet) {
+  const key = syncKey();
+  if (!key) { if (!quiet) syncStatus('Ingen nyckel angiven — synk av.'); return false; }
+  if (!quiet) syncStatus('Synkar…');
+  try {
+    const res = await fetch('api.php?key=' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ games: loadOverrides() }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      syncStatus('Synk misslyckades: ' + (data.error || res.status));
+      return false;
+    }
+    if (Array.isArray(data.games)) {
+      saveOverrides(data.games);
+      renderAllGames();
+    }
+    syncStatus('Synkad — ' + (data.count || 0) + ' poster på servern.');
+    return true;
+  } catch (err) {
+    syncStatus('Ingen kontakt med servern (offline?).');
+    return false;
+  }
+}
+
+(function() {
+  const field = document.getElementById('sync-key');
+  const saveBtn = document.getElementById('sync-save');
+  if (!field) return;
+  field.value = syncKey();
+
+  saveBtn.addEventListener('click', () => {
+    const v = field.value.trim();
+    try {
+      if (v) localStorage.setItem(SYNC_KEY_STORE, v);
+      else localStorage.removeItem(SYNC_KEY_STORE);
+    } catch {}
+    syncNow(false);
+  });
+
+  document.getElementById('sync-now').addEventListener('click', () => syncNow(false));
+
+  if (syncKey()) syncNow(true);
+  else syncStatus('Ingen nyckel angiven — synk av.');
+})();
 
 // ── Backup ────────────────────────────────────────────────────────────────────
 // Everything scanned in lives in this one browser's localStorage. Clearing

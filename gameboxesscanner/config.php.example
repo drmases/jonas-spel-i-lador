@@ -1,0 +1,4 @@
+<?php
+// Copy this file to config.php on the server and set your own key.
+// config.php is not in the repository, so the key never reaches GitHub.
+return ['key' => 'byt-ut-mig'];
