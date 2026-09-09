@@ -160,8 +160,13 @@
     <button class="btn" id="live-btn">🎥 Starta kameran</button>
     <div id="live-reader"></div>
     <p style="color:var(--muted);font-size:13px;text-align:center;margin-top:12px">
-      Håll streckkoden stadigt i bild.
+      Håll streckkoden stadigt i bild, vågrätt och utan reflex.
     </p>
+    <div class="ean-row" style="margin-top:14px">
+      <input class="field" id="manual-ean" type="text" inputmode="numeric"
+             placeholder="…eller skriv koden" autocomplete="off">
+      <button class="scan-mini-btn" id="manual-go" title="Slå upp">↵</button>
+    </div>
   </div>
   <div id="scan-result"></div>
 </div>
@@ -422,12 +427,32 @@ async function startLive() {
     liveScanner = new Html5Qrcode('live-reader', {
       formatsToSupport: BARCODE_FORMATS, verbose: false,
     });
-    await liveScanner.start(
-      { facingMode: 'environment' },
-      { fps: 10, aspectRatio: 1.333, qrbox: undefined },
-      (text) => { stopLive(); handleScanResult(text); },
-      () => {}
-    );
+    // Ask for a high resolution stream and scan only a wide band across the
+    // middle. Both raise the pixels-per-bar the decoder actually gets, which
+    // is what a 1D barcode lives or dies on.
+    const config = {
+      fps: 10,
+      qrbox: (w, h) => ({
+        width: Math.round(w * 0.92),
+        height: Math.round(Math.min(h * 0.6, Math.max(140, h * 0.35))),
+      }),
+    };
+    try {
+      await liveScanner.start(
+        { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        config,
+        (text) => { stopLive(); handleScanResult(text); },
+        () => {}
+      );
+    } catch {
+      // Some devices reject the resolution hint outright — take what we get.
+      await liveScanner.start(
+        { facingMode: 'environment' },
+        config,
+        (text) => { stopLive(); handleScanResult(text); },
+        () => {}
+      );
+    }
     // iOS will not paint the preview unless the video plays inline.
     const v = host.querySelector('video');
     if (v) {
@@ -466,6 +491,21 @@ function initScanner() {
   if (liveBtn && !liveBtn.dataset.wired) {
     liveBtn.dataset.wired = '1';
     liveBtn.addEventListener('click', startLive);
+  }
+  const manual = document.getElementById('manual-ean');
+  const go = document.getElementById('manual-go');
+  if (manual && !manual.dataset.wired) {
+    manual.dataset.wired = '1';
+    const submit = () => {
+      const code = normEan(manual.value);
+      if (!code) return;
+      stopLive();
+      manual.value = '';
+      manual.blur();
+      handleScanResult(code);
+    };
+    go.addEventListener('click', submit);
+    manual.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
   }
 }
 
