@@ -236,6 +236,18 @@
   <div id="all-games-list"></div>
 
   <hr class="divider">
+  <div id="backup">
+    <div id="backup-count" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
+    <button class="btn btn-secondary" id="export-btn">⬇ Exportera koder</button>
+    <button class="btn btn-secondary" id="import-btn">⬆ Importera koder</button>
+    <textarea class="field" id="backup-box" rows="7" hidden
+              style="margin-top:12px;font-family:ui-monospace,monospace;font-size:12px"
+              placeholder="Klistra in säkerhetskopian här och tryck Importera igen"></textarea>
+    <button class="btn" id="backup-copy" hidden>📋 Kopiera</button>
+    <p id="backup-msg" style="font-size:13px;color:var(--muted);margin-top:10px;text-align:center"></p>
+  </div>
+
+  <hr class="divider">
   <button class="btn btn-secondary" id="clear-storage-btn" style="width:100%;color:#c0392b;border-color:#c0392b">Rensa all sparad data (EAN-koder)</button>
 </div>
 
@@ -530,6 +542,7 @@ function renderAllGames() {
   const games = allGames();
   document.getElementById('game-list-header').textContent = `${games.length} spel i samlingen`;
   document.getElementById('all-games-list').innerHTML = games.map(g => gameCard(g, true)).join('');
+  if (window.refreshBackupCount) window.refreshBackupCount();
 }
 
 window.editGame = function(g) {
@@ -559,10 +572,105 @@ document.getElementById('form-save').addEventListener('click', () => {
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
+// ── Backup ────────────────────────────────────────────────────────────────────
+// Everything scanned in lives in this one browser's localStorage. Clearing
+// site data — which fixing a stuck cache requires — takes it with it, so make
+// the data something you can carry out and put back.
+(function() {
+  const box = document.getElementById('backup-box');
+  const copyBtn = document.getElementById('backup-copy');
+  const msg = document.getElementById('backup-msg');
+  const count = document.getElementById('backup-count');
+
+  function refreshCount() {
+    const n = loadOverrides().length;
+    count.textContent = n
+      ? n + (n === 1 ? ' egen post sparad i den här webbläsaren.' : ' egna poster sparade i den här webbläsaren.')
+      : 'Inget eget sparat ännu.';
+  }
+
+  function mergeOne(g) {
+    if (!g || !g.namn || !g.låda) return false;
+    const entry = {
+      ean: g.ean || null,
+      namn: String(g.namn),
+      låda: String(g.låda),
+      status: g.status || null,
+    };
+    if (entry.ean) { upsertOverride(entry); return true; }
+    const existing = loadOverrides();
+    const idx = existing.findIndex(o => !o.ean && o.namn && o.namn.toLowerCase() === entry.namn.toLowerCase());
+    if (idx >= 0) {
+      entry._id = existing[idx]._id;
+      existing[idx] = entry;
+      saveOverrides(existing);
+    } else {
+      entry._id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      existing.push(entry);
+      saveOverrides(existing);
+    }
+    return true;
+  }
+
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const data = loadOverrides();
+    if (!data.length) {
+      box.hidden = true; copyBtn.hidden = true;
+      msg.textContent = 'Det finns inget sparat att exportera ännu.';
+      return;
+    }
+    box.value = JSON.stringify(data, null, 2);
+    box.hidden = false;
+    copyBtn.hidden = false;
+    msg.textContent = data.length + ' poster. Kopiera texten och spara den någonstans.';
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(box.value);
+      msg.textContent = 'Kopierat.';
+    } catch {
+      box.focus();
+      box.select();
+      msg.textContent = 'Markera texten och kopiera manuellt.';
+    }
+  });
+
+  document.getElementById('import-btn').addEventListener('click', () => {
+    if (box.hidden || !box.value.trim()) {
+      box.hidden = false;
+      box.value = '';
+      copyBtn.hidden = true;
+      box.focus();
+      msg.textContent = 'Klistra in säkerhetskopian och tryck Importera igen.';
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(box.value);
+    } catch (err) {
+      msg.textContent = 'Kunde inte läsa texten: ' + ((err && err.message) || 'ogiltig JSON');
+      return;
+    }
+    if (!Array.isArray(parsed)) { msg.textContent = 'Väntade en lista med poster.'; return; }
+    let n = 0;
+    parsed.forEach(g => { if (mergeOne(g)) n++; });
+    renderAllGames();
+    refreshCount();
+    box.hidden = true;
+    box.value = '';
+    msg.textContent = n + ' av ' + parsed.length + ' poster importerade.';
+  });
+
+  refreshCount();
+  window.refreshBackupCount = refreshCount;
+})();
+
 document.getElementById('clear-storage-btn').addEventListener('click', () => {
   if (confirm('Radera alla sparade EAN-koder? Detta går inte att ångra.')) {
     localStorage.removeItem('gameboxes_overrides');
     renderAllGames();
+    if (window.refreshBackupCount) window.refreshBackupCount();
     alert('All sparad data raderad.');
   }
 });
