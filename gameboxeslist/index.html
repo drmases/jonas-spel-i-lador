@@ -17,6 +17,14 @@
   header::before { content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); width:120px; height:2px; background:var(--accent); }
   h1 { font-family:'Inter',sans-serif; font-size:clamp(2.5rem,6vw,4.5rem); font-weight:900; color:var(--accent); text-shadow:0 0 60px rgba(201,151,58,.2); }
   .subtitle { margin-top:10px; color:var(--muted); font-style:italic; }
+  .head-actions { margin-top:22px; }
+  .scan-link {
+    display:inline-block; font-family:'Inter',sans-serif; font-size:.85rem;
+    letter-spacing:.05em; text-transform:uppercase; text-decoration:none;
+    color:var(--accent); border:1px solid var(--accent); padding:10px 22px;
+    transition:background .2s;
+  }
+  .scan-link:hover { background:rgba(201,151,58,.1); }
   .stats { display:flex; justify-content:center; gap:40px; margin-top:24px; flex-wrap:wrap; }
   .stat { text-align:center; }
   .stat-number { font-family:'Inter',sans-serif; font-size:2rem; color:var(--accent); display:block; }
@@ -58,6 +66,9 @@
     <div class="stat"><span class="stat-number" id="totalGames">0</span><span class="stat-label">Spel totalt</span></div>
     <div class="stat"><span class="stat-number" id="totalBoxes">0</span><span class="stat-label">Lådor + garderob</span></div>
   </div>
+  <div class="head-actions">
+    <a class="scan-link" href="/gameboxesscanner/">📷 Skanna en ask</a>
+  </div>
 </header>
 <div class="controls">
   <div class="search-wrap">
@@ -76,7 +87,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
 }
 </script>
-<footer>Alla lådor dokumenterade &mdash; 2026 &nbsp;|&nbsp; <a href="/gameboxesscanner/" style="color:var(--accent);text-decoration:none">📷 Skanner</a></footer>
+<footer>Alla lådor dokumenterade &mdash; 2026</footer>
 <script>
 const data=[
   {id:"A",status:"full",games:["Survive: Escape from Atlantis!","Francis Drake","Scotland Yard ×2","Manhattan","Power Grid","Fast Sloths","Shogun"]},

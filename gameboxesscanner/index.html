@@ -44,9 +44,39 @@
     padding: 16px 16px calc(72px + env(safe-area-inset-bottom)) 16px;
     display: none;
   }
+  /* Cap the reading width: on a desktop screen a single column stretched to
+     1400px is unusable, and the app is designed for a phone anyway. */
   .panel.active { display: block; }
+  .panel > * { max-width: 580px; margin-left: auto; margin-right: auto; }
 
-  h1 { color: var(--accent); font-size: 20px; margin-bottom: 16px; font-weight: 700; letter-spacing: 0.02em; }
+  h1 { color: var(--accent); font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+
+  .page-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 18px;
+  }
+  .head-link {
+    color: var(--muted); font-size: 13px; text-decoration: none;
+    border: 1px solid var(--border); border-radius: 100px;
+    padding: 7px 13px; white-space: nowrap; transition: color .15s, border-color .15s;
+  }
+  .head-link:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Buttons side by side instead of a tall stack of full-width bars. */
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { margin-top: 0; }
+
+  details#settings { margin-top: 4px; }
+  details#settings > summary {
+    cursor: pointer; list-style: none; padding: 12px 2px;
+    color: var(--muted); font-size: 14px; border-top: 1px solid var(--border);
+  }
+  details#settings > summary::-webkit-details-marker { display: none; }
+  details#settings > summary::after { content: ' ▾'; }
+  details#settings[open] > summary::after { content: ' ▴'; }
+  details#settings > summary:hover { color: var(--accent); }
+  .settings-group { padding: 4px 0 8px; }
+  .settings-group + .settings-group { border-top: 1px solid var(--border); padding-top: 16px; }
 
   /* Scanner */
   #reader { width: 100%; background: #000; }
@@ -155,7 +185,10 @@
 
 <!-- SCAN PANEL -->
 <div class="panel active" id="panel-scan">
-  <h1>Skanna spel</h1>
+  <div class="page-head">
+    <h1>Skanna spel</h1>
+    <a class="head-link" href="/gameboxes/">📚 Alla lådor</a>
+  </div>
   <div id="live-wrap">
     <button class="btn" id="live-btn">🎥 Starta kameran</button>
     <div id="live-reader"></div>
@@ -173,7 +206,10 @@
 
 <!-- SEARCH PANEL -->
 <div class="panel" id="panel-search">
-  <h1>Sök spel</h1>
+  <div class="page-head">
+    <h1>Sök spel</h1>
+    <a class="head-link" href="/gameboxes/">📚 Alla lådor</a>
+  </div>
   <div class="search-wrap">
     <input class="search-input" id="search-input" type="search" placeholder="Spelnamn…" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>
@@ -182,7 +218,10 @@
 
 <!-- ADD/EDIT PANEL -->
 <div class="panel" id="panel-add">
-  <h1>Lägg till / Redigera</h1>
+  <div class="page-head">
+    <h1>Lägg till</h1>
+    <a class="head-link" href="/gameboxes/">📚 Alla lådor</a>
+  </div>
   <div class="form-group">
     <label>EAN-kod</label>
     <div class="ean-row">
@@ -233,38 +272,51 @@
       <option value="luft">Luft</option>
     </select>
   </div>
-  <button class="btn" id="form-save">Spara</button>
-  <button class="btn btn-secondary" id="form-clear" style="margin-top:8px">Rensa formulär</button>
+  <div class="btn-row" style="margin-top:16px">
+    <button class="btn" id="form-save">Spara</button>
+    <button class="btn btn-secondary" id="form-clear" style="flex:0 0 40%">Rensa</button>
+  </div>
 
   <hr class="divider">
   <div id="game-list-header"></div>
   <div id="all-games-list"></div>
 
-  <hr class="divider">
-  <div id="sync">
-    <label>Synknyckel (delas mellan dina enheter)</label>
-    <div class="ean-row">
-      <input class="field" id="sync-key" type="password" placeholder="Nyckel från config.php" autocomplete="off">
-      <button class="scan-mini-btn" id="sync-save" title="Spara nyckel">💾</button>
+  <details id="settings">
+    <summary>Inställningar och säkerhetskopia</summary>
+
+    <div class="settings-group" id="sync">
+      <label>Synknyckel — delas mellan dina enheter</label>
+      <div class="ean-row">
+        <input class="field" id="sync-key" type="password" placeholder="Nyckel från config.php" autocomplete="off">
+        <button class="scan-mini-btn" id="sync-save" title="Spara nyckel">💾</button>
+      </div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-secondary" id="sync-now">🔄 Synka nu</button>
+      </div>
+      <p id="sync-msg" style="font-size:13px;color:var(--muted);margin-top:10px">Synk av.</p>
     </div>
-    <button class="btn btn-secondary" id="sync-now">🔄 Synka nu</button>
-    <p id="sync-msg" style="font-size:13px;color:var(--muted);margin-top:10px;text-align:center">Synk av.</p>
-  </div>
 
-  <hr class="divider">
-  <div id="backup">
-    <div id="backup-count" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
-    <button class="btn btn-secondary" id="export-btn">⬇ Exportera koder</button>
-    <button class="btn btn-secondary" id="import-btn">⬆ Importera koder</button>
-    <textarea class="field" id="backup-box" rows="7" hidden
-              style="margin-top:12px;font-family:ui-monospace,monospace;font-size:12px"
-              placeholder="Klistra in säkerhetskopian här och tryck Importera igen"></textarea>
-    <button class="btn" id="backup-copy" hidden>📋 Kopiera</button>
-    <p id="backup-msg" style="font-size:13px;color:var(--muted);margin-top:10px;text-align:center"></p>
-  </div>
+    <div class="settings-group" id="backup">
+      <div id="backup-count" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="export-btn">⬇ Exportera</button>
+        <button class="btn btn-secondary" id="import-btn">⬆ Importera</button>
+      </div>
+      <textarea class="field" id="backup-box" rows="7" hidden
+                style="margin-top:12px;font-family:ui-monospace,monospace;font-size:12px"
+                placeholder="Klistra in säkerhetskopian här och tryck Importera igen"></textarea>
+      <button class="btn" id="backup-copy" hidden>📋 Kopiera</button>
+      <p id="backup-msg" style="font-size:13px;color:var(--muted);margin-top:10px"></p>
+    </div>
 
-  <hr class="divider">
-  <button class="btn btn-secondary" id="clear-storage-btn" style="width:100%;color:#c0392b;border-color:#c0392b">Rensa all sparad data (EAN-koder)</button>
+    <div class="settings-group">
+      <button class="btn btn-secondary" id="clear-storage-btn"
+              style="color:#c0392b;border-color:#c0392b">Rensa lokalt sparad data</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px">
+        Tömmer bara den här enheten. Är synken på hämtas allt tillbaka från servern.
+      </p>
+    </div>
+  </details>
 </div>
 
 <!-- TAB BAR -->
