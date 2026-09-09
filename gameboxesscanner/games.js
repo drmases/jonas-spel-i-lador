@@ -65,7 +65,7 @@ window.GAMES = [
   {ean:null, namn:"Castle Itter", låda:"G", status:"luft"},
   // Box H (full)
   {ean:null, namn:"Parade", låda:"H", status:"full"},
-  {ean:null, namn:"Don't Mess with Cthulhu", låda:"H", status:"full"},
+  {ean:"792273251158", namn:"Don't Mess with Cthulhu", låda:"H", status:"full"},
   {ean:null, namn:"King of New York + expansion", låda:"H", status:"full"},
   {ean:null, namn:"Euphoria", låda:"H", status:"full"},
   {ean:null, namn:"Mottainai", låda:"H", status:"full"},
@@ -174,7 +174,7 @@ window.GAMES = [
   {ean:null, namn:"Northern Pacific", låda:"P", status:null},
   {ean:null, namn:"That's Life!", låda:"P", status:null},
   {ean:null, namn:"Beyond the Sun", låda:"P", status:null},
-  {ean:null, namn:"Hit Z Road", låda:"P", status:null},
+  {ean:"3558380029519", namn:"Hit Z Road", låda:"P", status:null},
   {ean:null, namn:"Cyclades: Titans", låda:"P", status:null},
   {ean:null, namn:"Hollywood", låda:"P", status:null},
   {ean:null, namn:"Diner", låda:"P", status:null},
