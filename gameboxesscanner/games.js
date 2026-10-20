@@ -251,4 +251,6 @@ window.GAMES = [
   {ean:null, namn:"Helt Genialt", låda:"G", status:"luft"},
   {ean:null, namn:"Skyrise", låda:"C", status:null},
   {ean:null, namn:"Fünf Gurken", låda:"G", status:"luft"},
+  {ean:null, namn:"Don't Go In There", låda:"Garderob", status:null},
+  {ean:null, namn:"Blood Rage", låda:"Garderob", status:null},
 ];
