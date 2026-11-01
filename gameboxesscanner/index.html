@@ -29,6 +29,7 @@
     --clip-md: polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
   html, body {
     height: 100%; background: var(--bg); color: var(--text);
     font-family: var(--mono); font-size: 15px; -webkit-font-smoothing: antialiased;
@@ -298,12 +299,15 @@
   }
 
   /* Settings */
-  details#settings { margin-top: 4px; }
+  details#settings { margin-bottom: 18px; }
   details#settings > summary {
-    cursor: pointer; list-style: none; padding: 14px 2px;
+    cursor: pointer; list-style: none; padding: 12px 2px;
     color: var(--muted); font-family: var(--head); font-size: 11px; font-weight: 600;
-    letter-spacing: .16em; text-transform: uppercase; border-top: 1px solid var(--line);
+    letter-spacing: .16em; text-transform: uppercase;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
   }
+  details#settings[open] { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  details#settings[open] > summary { border-bottom: none; }
   details#settings > summary::-webkit-details-marker { display: none; }
   details#settings > summary::after { content: ' ▾'; }
   details#settings[open] > summary::after { content: ' ▴'; }
@@ -354,6 +358,45 @@
     <h1>Lägg till</h1>
     <a class="head-link" href="/gameboxes/">📚 Alla lådor</a>
   </div>
+  <details id="settings">
+    <summary>Inställningar och säkerhetskopia <span class="build"></span></summary>
+
+    <div class="settings-group" id="sync">
+      <label>Synknyckel — delas mellan dina enheter</label>
+      <div class="ean-row">
+        <input class="field" id="sync-key" type="password" placeholder="Nyckel från config.php" autocomplete="off">
+        <button class="scan-mini-btn" id="sync-reveal" title="Visa nyckeln">👁</button>
+        <button class="scan-mini-btn" id="sync-save" title="Spara nyckel">💾</button>
+      </div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-secondary" id="sync-now">🔄 Synka nu</button>
+        <button class="btn btn-secondary" id="sync-check">🔍 Kolla servern</button>
+      </div>
+      <p id="sync-msg" style="font-size:13px;color:var(--muted);margin-top:10px;white-space:pre-line">Synk av.</p>
+    </div>
+
+    <div class="settings-group" id="backup">
+      <div id="backup-count" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="export-btn">⬇ Exportera</button>
+        <button class="btn btn-secondary" id="import-btn">⬆ Importera</button>
+      </div>
+      <textarea class="field" id="backup-box" rows="7" hidden
+                style="margin-top:12px;font-family:ui-monospace,monospace;font-size:12px"
+                placeholder="Klistra in säkerhetskopian här och tryck Importera igen"></textarea>
+      <button class="btn" id="backup-copy" hidden>📋 Kopiera</button>
+      <p id="backup-msg" style="font-size:13px;color:var(--muted);margin-top:10px"></p>
+    </div>
+
+    <div class="settings-group">
+      <button class="btn btn-secondary" id="clear-storage-btn"
+              style="color:#c0392b;border-color:#c0392b">Rensa lokalt sparad data</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px">
+        Tömmer bara den här enheten. Är synken på hämtas allt tillbaka från servern.
+      </p>
+    </div>
+  </details>
+
   <input type="hidden" id="form-id">
   <div class="form-group">
     <label>EAN-kod</label>
@@ -399,44 +442,6 @@
   </div>
   <div id="all-games-list"></div>
 
-  <details id="settings">
-    <summary>Inställningar och säkerhetskopia <span class="build"></span></summary>
-
-    <div class="settings-group" id="sync">
-      <label>Synknyckel — delas mellan dina enheter</label>
-      <div class="ean-row">
-        <input class="field" id="sync-key" type="password" placeholder="Nyckel från config.php" autocomplete="off">
-        <button class="scan-mini-btn" id="sync-reveal" title="Visa nyckeln">👁</button>
-        <button class="scan-mini-btn" id="sync-save" title="Spara nyckel">💾</button>
-      </div>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn btn-secondary" id="sync-now">🔄 Synka nu</button>
-        <button class="btn btn-secondary" id="sync-check">🔍 Kolla servern</button>
-      </div>
-      <p id="sync-msg" style="font-size:13px;color:var(--muted);margin-top:10px;white-space:pre-line">Synk av.</p>
-    </div>
-
-    <div class="settings-group" id="backup">
-      <div id="backup-count" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
-      <div class="btn-row">
-        <button class="btn btn-secondary" id="export-btn">⬇ Exportera</button>
-        <button class="btn btn-secondary" id="import-btn">⬆ Importera</button>
-      </div>
-      <textarea class="field" id="backup-box" rows="7" hidden
-                style="margin-top:12px;font-family:ui-monospace,monospace;font-size:12px"
-                placeholder="Klistra in säkerhetskopian här och tryck Importera igen"></textarea>
-      <button class="btn" id="backup-copy" hidden>📋 Kopiera</button>
-      <p id="backup-msg" style="font-size:13px;color:var(--muted);margin-top:10px"></p>
-    </div>
-
-    <div class="settings-group">
-      <button class="btn btn-secondary" id="clear-storage-btn"
-              style="color:#c0392b;border-color:#c0392b">Rensa lokalt sparad data</button>
-      <p style="font-size:12px;color:var(--muted);margin-top:8px">
-        Tömmer bara den här enheten. Är synken på hämtas allt tillbaka från servern.
-      </p>
-    </div>
-  </details>
 </div>
 
 <!-- TAB BAR -->
@@ -453,7 +458,7 @@
 </nav>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="games.js?v=42"></script>
+<script src="games.js?v=43"></script>
 <script>
 // ── Data layer ──────────────────────────────────────────────────────────────
 const LS_KEY = 'gameboxes_overrides';
@@ -902,7 +907,7 @@ document.getElementById('form-save').addEventListener('click', async () => {
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
-const APP_VERSION = 'v42';
+const APP_VERSION = 'v43';
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 // localStorage is per-device, so a code scanned on the phone never reached the
