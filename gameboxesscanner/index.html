@@ -5,180 +5,285 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gameboxes</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c9973a">
+<meta name="theme-color" content="#060b14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0e0c09;
-    --surface: #1a1610;
-    --border: #3a2e1e;
-    --accent: #c9973a;
-    --text: #e8dcc8;
-    --muted: #8a7a64;
-    --full: #7a3a3a;
-    --luft: #3a5a3a;
+    --bg:      #060b14;
+    --panel:   #0b1424;
+    --panel-2: #0e1a2d;
+    --line:    #15314d;
+    --cyan:    #22d3ee;
+    --cyan-dim:#0e7490;
+    --violet:  #a855f7;
+    --amber:   #f59e0b;
+    --text:    #d8e8f5;
+    --muted:   #5f7d99;
+    --head: 'Chakra Petch', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --clip-sm: polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+    --clip-md: polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+  html, body {
+    height: 100%; background: var(--bg); color: var(--text);
+    font-family: var(--mono); font-size: 15px; -webkit-font-smoothing: antialiased;
+  }
   body { display: flex; flex-direction: column; }
+  /* Fixed, so it stays out of the flex flow. */
+  html::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(34,211,238,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,211,238,.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 130% 70% at 50% 0%, #000 15%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 130% 70% at 50% 0%, #000 15%, transparent 80%);
+  }
+  html::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 70% 40% at 10% 0%,  rgba(34,211,238,.10), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 95% 10%, rgba(168,85,247,.10), transparent 60%);
+  }
 
   /* Tab bar */
   #tabbar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    display: flex; background: var(--surface); border-top: 1px solid var(--border);
-    z-index: 100; padding-bottom: env(safe-area-inset-bottom);
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    display: flex; background: rgba(8,15,27,.94);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .tab-btn {
-    flex: 1; padding: 12px 8px 10px; background: none; border: none;
-    color: var(--muted); font-size: 11px; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    min-height: 56px; transition: color 0.15s;
+    flex: 1; padding: 11px 8px 9px; background: none; border: none;
+    color: var(--muted); font-family: var(--head); font-weight: 600;
+    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    cursor: pointer; position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    min-height: 58px; transition: color .15s;
   }
-  .tab-btn .icon { font-size: 22px; }
-  .tab-btn.active { color: var(--accent); }
+  .tab-btn .icon { font-size: 19px; line-height: 1; }
+  .tab-btn.active { color: var(--cyan); }
+  .tab-btn.active::before {
+    content: ''; position: absolute; top: 0; left: 18%; right: 18%; height: 2px;
+    background: var(--cyan); box-shadow: 0 0 14px rgba(34,211,238,.9);
+  }
 
   /* Panels */
   .panel {
-    flex: 1; overflow-y: auto;
-    padding: 16px 16px calc(72px + env(safe-area-inset-bottom)) 16px;
+    flex: 1; overflow-y: auto; position: relative; z-index: 1;
+    padding: 18px 16px calc(78px + env(safe-area-inset-bottom)) 16px;
     display: none;
   }
-  /* Cap the reading width: on a desktop screen a single column stretched to
-     1400px is unusable, and the app is designed for a phone anyway. */
   .panel.active { display: block; }
   .panel > * { max-width: 580px; margin-left: auto; margin-right: auto; }
 
-  h1 { color: var(--accent); font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
-
+  h1 {
+    font-family: var(--head); font-weight: 700; font-size: 19px;
+    letter-spacing: .14em; text-transform: uppercase; color: #eafcff;
+    text-shadow: 0 0 18px rgba(34,211,238,.5);
+  }
   .page-head {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; margin-bottom: 18px;
+    gap: 12px; margin-bottom: 20px;
   }
   .head-link {
-    color: var(--muted); font-size: 13px; text-decoration: none;
-    border: 1px solid var(--border); border-radius: 100px;
-    padding: 7px 13px; white-space: nowrap; transition: color .15s, border-color .15s;
+    color: var(--muted); font-family: var(--head); font-weight: 600;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    text-decoration: none; border: 1px solid var(--line);
+    padding: 8px 14px; white-space: nowrap; clip-path: var(--clip-sm);
+    transition: color .15s, border-color .15s;
   }
-  .head-link:hover { color: var(--accent); border-color: var(--accent); }
+  .head-link:hover { color: var(--cyan); border-color: var(--cyan-dim); }
 
-  /* Buttons side by side instead of a tall stack of full-width bars. */
+  /* Buttons */
+  .btn {
+    display: block; width: 100%; padding: 14px; margin-top: 16px;
+    background: var(--cyan); color: var(--bg); border: none;
+    font-family: var(--head); font-weight: 700; font-size: 14px;
+    letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
+    min-height: 50px; clip-path: var(--clip-md);
+    box-shadow: 0 0 24px rgba(34,211,238,.35);
+    transition: box-shadow .18s, opacity .15s;
+  }
+  .btn:hover { box-shadow: 0 0 38px rgba(34,211,238,.6); }
+  .btn:active { opacity: .85; }
+  .btn:disabled { opacity: .5; box-shadow: none; cursor: default; }
+  .btn-secondary {
+    background: var(--panel); color: var(--cyan);
+    border: 1px solid var(--cyan-dim); box-shadow: none;
+  }
+  .btn-secondary:hover { border-color: var(--cyan); box-shadow: 0 0 20px rgba(34,211,238,.2); }
   .btn-row { display: flex; gap: 10px; }
   .btn-row .btn { margin-top: 0; }
 
-  details#settings { margin-top: 4px; }
-  details#settings > summary {
-    cursor: pointer; list-style: none; padding: 12px 2px;
-    color: var(--muted); font-size: 14px; border-top: 1px solid var(--border);
-  }
-  details#settings > summary::-webkit-details-marker { display: none; }
-  details#settings > summary::after { content: ' ▾'; }
-  details#settings[open] > summary::after { content: ' ▴'; }
-  details#settings > summary:hover { color: var(--accent); }
-  .settings-group { padding: 4px 0 8px; }
-  .settings-group + .settings-group { border-top: 1px solid var(--border); padding-top: 16px; }
-
   /* Scanner */
-  #reader { width: 100%; background: #000; }
+  #reader, #live-reader { width: 100%; background: #000; }
+  #live-reader:not(:empty) {
+    margin-top: 14px; border: 1px solid var(--cyan-dim);
+    clip-path: var(--clip-md); box-shadow: 0 0 30px rgba(34,211,238,.18);
+  }
   #scan-result { display: none; }
   .result-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 24px; text-align: center; margin-top: 16px;
+    position: relative; padding: 26px 22px; text-align: center; margin-top: 18px;
+    background: linear-gradient(165deg, rgba(14,26,45,.95), rgba(8,15,27,.95));
+    border: 1px solid var(--line); clip-path: polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px);
   }
+  .result-card::before, .result-card::after {
+    content: ''; position: absolute; width: 16px; height: 16px;
+    border-color: var(--cyan); opacity: .6; pointer-events: none;
+  }
+  .result-card::before { top: 8px; right: 8px; border-top: 1px solid; border-right: 1px solid; }
+  .result-card::after { bottom: 8px; left: 8px; border-bottom: 1px solid; border-left: 1px solid; }
   .result-box {
-    font-size: 64px; font-weight: 900; color: var(--accent);
-    line-height: 1; letter-spacing: -0.02em;
+    font-family: var(--head); font-size: 68px; font-weight: 700;
+    color: var(--cyan); line-height: 1; letter-spacing: .04em;
+    text-shadow: 0 0 34px rgba(34,211,238,.7);
   }
-  .result-name { font-size: 20px; margin-top: 8px; color: var(--text); }
+  .result-name { font-size: 17px; margin-top: 12px; color: var(--text); }
   .badge {
-    display: inline-block; padding: 4px 12px; border-radius: 100px;
-    font-size: 13px; font-weight: 600; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+    display: inline-block; padding: 5px 13px; margin-top: 14px;
+    font-family: var(--head); font-size: 11px; font-weight: 600;
+    letter-spacing: .16em; text-transform: uppercase; clip-path: var(--clip-sm);
   }
-  .badge-full { background: var(--full); color: #ffb3b3; }
-  .badge-luft { background: var(--luft); color: #b3ffb3; }
-  .badge-null { background: var(--border); color: var(--muted); }
-  .btn {
-    display: block; width: 100%; padding: 14px; margin-top: 16px;
-    background: var(--accent); color: var(--bg); border: none;
-    border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer;
-    min-height: 48px; transition: opacity 0.15s;
-  }
-  .btn:active { opacity: 0.8; }
-  .btn-secondary {
-    background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
-  }
+  .badge-full { background: rgba(245,158,11,.14); color: var(--amber); border: 1px solid rgba(245,158,11,.4); }
+  .badge-luft { background: rgba(34,211,238,.12); color: var(--cyan); border: 1px solid rgba(34,211,238,.4); }
+  .badge-null { background: rgba(21,49,77,.5); color: var(--muted); border: 1px solid var(--line); }
 
   /* Unknown form */
-  #unknown-form { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
-  #unknown-form p { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  #unknown-form {
+    background: rgba(6,11,20,.6); border: 1px solid var(--line);
+    padding: 16px; margin-top: 18px; text-align: left; clip-path: var(--clip-sm);
+  }
+  #unknown-form p {
+    color: var(--muted); font-size: 11px; margin-bottom: 14px;
+    letter-spacing: .14em; text-transform: uppercase;
+  }
 
   /* Search */
   .search-wrap { position: relative; margin-bottom: 16px; }
-  .search-input {
-    width: 100%; padding: 14px 16px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 12px;
-    color: var(--text); font-size: 16px; outline: none;
+  .search-wrap::before {
+    content: '>'; position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--cyan); font-weight: 600; pointer-events: none;
   }
-  .search-input:focus { border-color: var(--accent); }
+  .search-input {
+    width: 100%; padding: 14px 16px 14px 32px; background: var(--panel);
+    border: 1px solid var(--line); color: var(--text);
+    font-family: var(--mono); font-size: 16px; outline: none;
+    clip-path: var(--clip-sm); transition: border-color .2s, box-shadow .2s;
+  }
+  .search-input:focus { border-color: var(--cyan); box-shadow: 0 0 22px rgba(34,211,238,.2); }
   .search-input::placeholder { color: var(--muted); }
 
   /* Game cards */
   .game-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
-    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(165deg, rgba(14,26,45,.9), rgba(8,15,27,.9));
+    border: 1px solid var(--line); padding: 13px 15px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 13px;
+    clip-path: var(--clip-sm); transition: border-color .15s;
   }
+  .game-card:hover { border-color: var(--cyan-dim); }
   .game-card-box {
-    font-size: 22px; font-weight: 900; color: var(--accent);
-    min-width: 48px; text-align: center; letter-spacing: -0.02em;
+    font-family: var(--head); font-size: 21px; font-weight: 700; color: var(--cyan);
+    min-width: 50px; text-align: center; letter-spacing: .04em;
+    text-shadow: 0 0 14px rgba(34,211,238,.5);
   }
   .game-card-info { flex: 1; min-width: 0; }
-  .game-card-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .game-card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .edit-btn {
-    background: none; border: 1px solid var(--border); color: var(--muted);
-    padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;
-    min-height: 36px; transition: border-color 0.15s, color 0.15s;
+  .game-card-name { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .game-card-sub {
+    font-size: 10px; color: var(--muted); margin-top: 3px;
+    letter-spacing: .1em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
   }
-  .edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .game-card-sub .badge { margin-top: 0; padding: 2px 8px; font-size: 9px; }
+  .edit-btn {
+    background: none; border: 1px solid var(--line); color: var(--muted);
+    padding: 7px 13px; cursor: pointer; clip-path: var(--clip-sm);
+    font-family: var(--head); font-size: 11px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase;
+    min-height: 36px; transition: border-color .15s, color .15s;
+  }
+  .edit-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 
   /* Form */
-  .form-group { margin-bottom: 14px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
-  .field {
-    width: 100%; padding: 13px 14px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 10px;
-    color: var(--text); font-size: 16px; outline: none; -webkit-appearance: none;
+  .form-group { margin-bottom: 15px; }
+  label {
+    display: block; font-family: var(--head); font-size: 11px; color: var(--muted);
+    margin-bottom: 7px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
   }
-  .field:focus { border-color: var(--accent); }
-  select.field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a7a64' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .field {
+    width: 100%; padding: 13px 14px; background: var(--panel);
+    border: 1px solid var(--line); color: var(--text);
+    font-family: var(--mono); font-size: 16px; outline: none;
+    -webkit-appearance: none; clip-path: var(--clip-sm);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .field:focus { border-color: var(--cyan); box-shadow: 0 0 20px rgba(34,211,238,.18); }
+  .field::placeholder { color: var(--muted); }
+  select.field {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2322d3ee' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+  }
   .ean-row { display: flex; gap: 8px; }
   .ean-row .field { flex: 1; }
   .scan-mini-btn {
-    padding: 13px 14px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; color: var(--accent); cursor: pointer; font-size: 20px;
-    min-height: 48px; transition: border-color 0.15s;
+    padding: 13px 15px; background: var(--panel); border: 1px solid var(--cyan-dim);
+    color: var(--cyan); cursor: pointer; font-size: 19px; min-height: 50px;
+    clip-path: var(--clip-sm); transition: border-color .15s, box-shadow .15s;
   }
-  .scan-mini-btn:hover { border-color: var(--accent); }
+  .scan-mini-btn:hover { border-color: var(--cyan); box-shadow: 0 0 18px rgba(34,211,238,.25); }
+
   /* Name suggestions — a real list, because iOS Safari's datalist support
      is unreliable and the suggestions simply never appeared there. */
   .suggest-wrap { position: relative; }
   .suggest-list {
     position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
-    background: var(--surface); border: 1px solid var(--accent);
-    border-radius: 10px; max-height: 240px; overflow-y: auto;
-    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    background: var(--panel-2); border: 1px solid var(--cyan-dim);
+    max-height: 250px; overflow-y: auto; clip-path: var(--clip-sm);
+    box-shadow: 0 12px 34px rgba(0,0,0,.65);
   }
   .suggest-item {
-    padding: 12px 14px; font-size: 15px; cursor: pointer;
-    border-bottom: 1px solid var(--border);
+    padding: 12px 14px; font-size: 14px; cursor: pointer;
+    border-bottom: 1px solid var(--line);
   }
   .suggest-item:last-child { border-bottom: none; }
-  .suggest-item:active { background: rgba(201,151,58,.15); }
-  .suggest-item .sub { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-  #game-list-header { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
-  #no-results { color: var(--muted); text-align: center; padding: 32px; }
+  .suggest-item:active { background: rgba(34,211,238,.14); }
+  .suggest-item .sub {
+    display: block; font-size: 10px; color: var(--muted); margin-top: 3px;
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+
+  .divider {
+    border: none; height: 1px; margin: 22px 0;
+    background: linear-gradient(90deg, transparent, var(--line) 15%, var(--cyan-dim) 50%, var(--line) 85%, transparent);
+  }
+  #game-list-header {
+    font-size: 10px; color: var(--muted); margin-bottom: 12px;
+    letter-spacing: .18em; text-transform: uppercase;
+  }
+  #no-results {
+    color: var(--muted); text-align: center; padding: 36px;
+    font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  }
+
+  /* Settings */
+  details#settings { margin-top: 4px; }
+  details#settings > summary {
+    cursor: pointer; list-style: none; padding: 14px 2px;
+    color: var(--muted); font-family: var(--head); font-size: 11px; font-weight: 600;
+    letter-spacing: .16em; text-transform: uppercase; border-top: 1px solid var(--line);
+  }
+  details#settings > summary::-webkit-details-marker { display: none; }
+  details#settings > summary::after { content: ' ▾'; }
+  details#settings[open] > summary::after { content: ' ▴'; }
+  details#settings > summary:hover { color: var(--cyan); }
+  .settings-group { padding: 6px 0 10px; }
+  .settings-group + .settings-group { border-top: 1px solid var(--line); padding-top: 18px; }
 </style>
 </head>
 <body>
@@ -468,11 +573,16 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // ── Scanner ──────────────────────────────────────────────────────────────────
 
-const BARCODE_FORMATS = [
+const scannerLoaded = () => typeof Html5Qrcode !== 'undefined'
+  && typeof Html5QrcodeSupportedFormats !== 'undefined';
+
+// Guarded: if the CDN script did not arrive, reading these would throw and
+// abort the rest of the file, taking search and the add form with it.
+const BARCODE_FORMATS = scannerLoaded() ? [
   Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
   Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
   Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION, Html5QrcodeSupportedFormats.CODE_128,
-];
+] : [];
 
 // Live scanning is what actually decoded a code on this phone; the black
 // preview was a rendering problem, not a decoding one. Give the video real
@@ -487,6 +597,12 @@ async function startLive() {
   if (liveStarting) return;
   if (liveScanner) { await stopLive(); return; }
 
+  if (!scannerLoaded()) {
+    host.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:14px;text-align:center;'
+      + 'letter-spacing:.1em;text-transform:uppercase">Kameradelen kunde inte laddas.<br>'
+      + 'Sök på namn eller skriv koden nedan.</p>';
+    return;
+  }
   liveStarting = true;
   host.style.minHeight = '300px';
   btn.textContent = 'Startar…';
@@ -948,6 +1064,7 @@ function clearForm() {
 // Mini scan button in form — opens the live scanner in an overlay and drops
 // the code straight into the EAN field.
 document.getElementById('form-scan-btn').addEventListener('click', async () => {
+  if (!scannerLoaded()) { alert('Kameradelen kunde inte laddas. Skriv koden för hand.'); return; }
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(14,12,9,.96);z-index:200;'
     + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;';
