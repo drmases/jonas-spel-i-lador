@@ -121,20 +121,40 @@ function clean($g) {
 // keyed by its code; the same game saved later carries an id. Matching on a
 // single key left both in the store, and the older one — normalised to
 // värde:null — then wiped the grade the newer one held.
-function entry_keys($g) {
+function strong_keys($g) {
     $keys = [];
     if (!empty($g['id']))  $keys[] = 'i:' . $g['id'];
     if (!empty($g['ean'])) $keys[] = 'e:' . $g['ean'];
-    $keys[] = 'n:' . lower($g['namn']) . '|' . lower($g['låda']);
     return $keys;
+}
+
+// Name and box only. Two copies of the same game can share this — The Crew
+// sits in E and in Q — so it may never join entries that carry different ids.
+function weak_key($g) {
+    return 'n:' . lower($g['namn']) . '|' . lower($g['låda']);
+}
+
+function entry_keys($g) {
+    return array_merge(strong_keys($g), [weak_key($g)]);
 }
 
 // Fold an entry into the list, merging it with anything that shares an
 // identifier. $only limits which fields are taken from $c; null means all.
 function absorb(&$entries, &$index, $c, $only) {
     $hit = null;
-    foreach (entry_keys($c) as $k) {
+    foreach (strong_keys($c) as $k) {
         if (isset($index[$k])) { $hit = $index[$k]; break; }
+    }
+    if ($hit === null) {
+        $wk = weak_key($c);
+        if (isset($index[$wk])) {
+            $cand = $entries[$index[$wk]];
+            // Same name in the same box is not proof of the same game: two
+            // copies can sit there. Only trust it when the ids do not disagree.
+            if (empty($c['id']) || empty($cand['id']) || $c['id'] === $cand['id']) {
+                $hit = $index[$wk];
+            }
+        }
     }
     if ($hit === null) {
         $entries[] = $c;
@@ -164,7 +184,9 @@ function absorb(&$entries, &$index, $c, $only) {
         }
         $entries[$hit]['t'] = max($existing['t'], $c['t']);
     }
-    foreach (entry_keys($entries[$hit]) as $k) { $index[$k] = $hit; }
+    foreach (strong_keys($entries[$hit]) as $k) { $index[$k] = $hit; }
+    $wk = weak_key($entries[$hit]);
+    if (!isset($index[$wk])) { $index[$wk] = $hit; }
 }
 
 $store = __DIR__ . '/codes.json';
