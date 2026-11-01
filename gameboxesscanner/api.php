@@ -60,15 +60,20 @@ function clean($g) {
     if ($namn === '' || $lada === '') return null;
 
     $ean = (isset($g['ean']) && $g['ean'] !== null) ? norm_ean($g['ean']) : '';
-    $status = (isset($g['status']) && $g['status'] !== null) ? (string)$g['status'] : null;
-    if ($status !== null && !in_array($status, ['full', 'luft'], true)) {
-        $status = null;
+
+    // Value grade 1-3. Anything else is treated as unset.
+    $varde = (isset($g['värde']) && $g['värde'] !== null) ? (int)$g['värde'] : null;
+    if ($varde !== null && !in_array($varde, [1, 2, 3], true)) {
+        $varde = null;
     }
+
+    // Note: status is deliberately absent. Full/luft belongs to the box, not
+    // the game, and lives in games.js — a stale copy here would overwrite it.
     return [
-        'ean'    => $ean === '' ? null : $ean,
-        'namn'   => cut($namn, 200),
-        'låda'   => cut($lada, 20),
-        'status' => $status,
+        'ean'   => $ean === '' ? null : $ean,
+        'namn'  => cut($namn, 200),
+        'låda'  => cut($lada, 20),
+        'värde' => $varde,
     ];
 }
 
