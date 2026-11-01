@@ -458,7 +458,7 @@
 </nav>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="games.js?v=43"></script>
+<script src="games.js?v=44"></script>
 <script>
 // ── Data layer ──────────────────────────────────────────────────────────────
 const LS_KEY = 'gameboxes_overrides';
@@ -907,7 +907,7 @@ document.getElementById('form-save').addEventListener('click', async () => {
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
-const APP_VERSION = 'v43';
+const APP_VERSION = 'v44';
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 // localStorage is per-device, so a code scanned on the phone never reached the
@@ -1278,7 +1278,19 @@ document.getElementById('form-scan-btn').addEventListener('click', async () => {
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-document.querySelector('.build').textContent = APP_VERSION;
+// A fresh page paired with a stale seed is exactly the fault that cost us
+// several rounds, and it is invisible unless the two versions are compared.
+(function () {
+  const el = document.querySelector('.build');
+  const seed = window.GAMES_VERSION;
+  if (seed === APP_VERSION) {
+    el.textContent = APP_VERSION;
+  } else {
+    el.textContent = APP_VERSION + ' / seed ' + (seed || '?');
+    el.style.color = 'var(--amber)';
+    el.style.opacity = '1';
+  }
+})();
 document.getElementById('form-box').insertAdjacentHTML('beforeend', boxOptionsHtml());
 document.getElementById('only-missing').addEventListener('change', renderAllGames);
 initScanner();
