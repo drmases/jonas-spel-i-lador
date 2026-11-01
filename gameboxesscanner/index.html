@@ -308,6 +308,7 @@
   details#settings > summary::after { content: ' ▾'; }
   details#settings[open] > summary::after { content: ' ▴'; }
   details#settings > summary:hover { color: var(--cyan); }
+  .build { float: right; opacity: .65; letter-spacing: .1em; }
   .settings-group { padding: 6px 0 10px; }
   .settings-group + .settings-group { border-top: 1px solid var(--line); padding-top: 18px; }
 </style>
@@ -399,7 +400,7 @@
   <div id="all-games-list"></div>
 
   <details id="settings">
-    <summary>Inställningar och säkerhetskopia</summary>
+    <summary>Inställningar och säkerhetskopia <span class="build"></span></summary>
 
     <div class="settings-group" id="sync">
       <label>Synknyckel — delas mellan dina enheter</label>
@@ -897,6 +898,8 @@ document.getElementById('form-save').addEventListener('click', async () => {
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
+const APP_VERSION = 'v38';
+
 // ── Sync ──────────────────────────────────────────────────────────────────────
 // localStorage is per-device, so a code scanned on the phone never reached the
 // desktop. Push the local entries to a small endpoint that merges them
@@ -1224,6 +1227,7 @@ document.getElementById('form-scan-btn').addEventListener('click', async () => {
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+document.querySelector('.build').textContent = APP_VERSION;
 document.getElementById('form-box').insertAdjacentHTML('beforeend', boxOptionsHtml());
 document.getElementById('only-missing').addEventListener('change', renderAllGames);
 initScanner();
