@@ -834,12 +834,11 @@ function resumeScan() {
   document.getElementById('scan-result').innerHTML = '';
 }
 
-function quickSave(ean) {
+async function quickSave(ean) {
   const name = document.getElementById('quick-name').value.trim();
   const box = document.getElementById('quick-box').value;
   if (!name || !box) { alert('Fyll i namn och låda.'); return; }
-  upsertOverride({ ean, namn: name, låda: box, värde: null });
-  syncNow(true);
+  await saveAndSync({ ean, namn: name, låda: box, värde: null }, name);
   handleScanResult(ean);
 }
 
@@ -885,18 +884,15 @@ window.editGame = function(g) {
   document.getElementById('form-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
-document.getElementById('form-save').addEventListener('click', () => {
+document.getElementById('form-save').addEventListener('click', async () => {
   const ean = document.getElementById('form-ean').value.trim() || null;
   const name = document.getElementById('form-name').value.trim();
   const box = document.getElementById('form-box').value;
   const value = Number(document.getElementById('form-value').value) || null;
   const id = document.getElementById('form-id').value || null;
   if (!name || !box) { formMsg('Namn och låda krävs.', 'error'); return; }
-  upsertOverride({ id, ean, namn: name, låda: box, värde: value });
   clearForm();
-  renderAllGames();
-  syncNow(true);
-  formMsg('Sparat: ' + name, 'ok');
+  await saveAndSync({ id, ean, namn: name, låda: box, värde: value }, name);
 });
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
@@ -918,7 +914,10 @@ function syncStatus(text) {
 
 async function syncNow(quiet) {
   const key = syncKey();
-  if (!key) { if (!quiet) syncStatus('Ingen nyckel angiven — synk av.'); return false; }
+  if (!key) {
+    if (!quiet) syncStatus('Ingen nyckel angiven — synk av.');
+    return { ok: false, reason: 'Ingen synknyckel är angiven på den här enheten.' };
+  }
   if (!quiet) syncStatus('Synkar…');
   try {
     const res = await fetch('api.php?key=' + encodeURIComponent(key), {
@@ -929,17 +928,17 @@ async function syncNow(quiet) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       syncStatus('Synk misslyckades: ' + (data.error || res.status));
-      return false;
+      return { ok: false, reason: 'Servern svarade: ' + (data.error || res.status) + '.' };
     }
     if (Array.isArray(data.games)) {
       saveOverrides(data.games);
       renderAllGames();
     }
     syncStatus('Synkad — ' + (data.count || 0) + ' poster på servern.');
-    return true;
+    return { ok: true, count: data.count || 0 };
   } catch (err) {
     syncStatus('Ingen kontakt med servern (offline?).');
-    return false;
+    return { ok: false, reason: 'Ingen kontakt med servern. Är du uppkopplad?' };
   }
 }
 
@@ -1141,6 +1140,21 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
 })();
 
 let formMsgTimer = null;
+async function saveAndSync(entry, label) {
+  upsertOverride(entry);
+  renderAllGames();
+  const r = await syncNow(true);
+  if (r.ok) {
+    formMsg('Sparat och synkat: ' + label, 'ok');
+  } else {
+    formMsg('Sparat lokalt — INTE på servern', 'error');
+    alert('Sparningen nådde inte servern.\n\n' + r.reason
+      + '\n\nÄndringen ligger kvar på den här enheten och skickas upp '
+      + 'nästa gång synken lyckas. Undvik att rensa lokal data innan dess.');
+  }
+  return r.ok;
+}
+
 function formMsg(text, kind) {
   const el = document.getElementById('form-msg');
   el.textContent = text;
