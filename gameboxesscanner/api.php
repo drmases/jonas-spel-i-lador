@@ -85,10 +85,35 @@ function clean($g) {
     ];
 }
 
-function entry_key($g) {
-    if ($g['id'] !== null && $g['id'] !== '') return 'i:' . $g['id'];
-    if ($g['ean'] !== null && $g['ean'] !== '') return 'e:' . $g['ean'];
-    return 'n:' . lower($g['namn']);
+// Every way the same game can be named. An entry saved before ids existed is
+// keyed by its code; the same game saved later carries an id. Matching on a
+// single key left both in the store, and the older one — normalised to
+// värde:null — then wiped the grade the newer one held.
+function entry_keys($g) {
+    $keys = [];
+    if (!empty($g['id']))  $keys[] = 'i:' . $g['id'];
+    if (!empty($g['ean'])) $keys[] = 'e:' . $g['ean'];
+    $keys[] = 'n:' . lower($g['namn']) . '|' . lower($g['låda']);
+    return $keys;
+}
+
+// Fold an entry into the list, merging it with anything that shares an
+// identifier. $only limits which fields are taken from $c; null means all.
+function absorb(&$entries, &$index, $c, $only) {
+    $hit = null;
+    foreach (entry_keys($c) as $k) {
+        if (isset($index[$k])) { $hit = $index[$k]; break; }
+    }
+    if ($hit === null) {
+        $entries[] = $c;
+        $hit = count($entries) - 1;
+    } else {
+        foreach (['id', 'ean', 'namn', 'låda', 'värde'] as $f) {
+            if ($only !== null && !in_array($f, $only, true)) continue;
+            $entries[$hit][$f] = $c[$f];
+        }
+    }
+    foreach (entry_keys($entries[$hit]) as $k) { $index[$k] = $hit; }
 }
 
 $store = __DIR__ . '/codes.json';
@@ -112,11 +137,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $incoming = (is_array($in) && isset($in['games']) && is_array($in['games'])) ? $in['games'] : [];
 
     // Merge server-side so two devices saving at once cannot clobber each
-    // other: last write wins per entry, not per whole file.
-    $map = [];
+    // other: last write wins per field, not per whole file. Folding the
+    // stored entries through the same path also repairs duplicates already
+    // in codes.json.
+    $entries = [];
+    $index = [];
     foreach ($current as $g) {
         $c = clean($g);
-        if ($c) $map[entry_key($c)] = $c;
+        if ($c) absorb($entries, $index, $c, null);
     }
     // Overlay only the fields the client actually sent. Replacing the whole
     // entry would let a device running older code wipe a value it never knew
@@ -124,18 +152,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($incoming as $g) {
         $c = clean($g);
         if (!$c) continue;
-        $k = entry_key($c);
-        if (isset($map[$k])) {
-            $entry = $map[$k];
-            foreach (['id', 'ean', 'namn', 'låda', 'värde'] as $field) {
-                if (array_key_exists($field, $g)) $entry[$field] = $c[$field];
-            }
-            $map[$k] = $entry;
-        } else {
-            $map[$k] = $c;
-        }
+        $provided = array_values(array_filter(
+            ['id', 'ean', 'namn', 'låda', 'värde'],
+            function ($f) use ($g) { return array_key_exists($f, $g); }
+        ));
+        absorb($entries, $index, $c, $provided);
     }
-    $merged = array_values($map);
+    $merged = $entries;
 
     if (count($merged) > MAX_ENTRIES) {
         flock($fp, LOCK_UN); fclose($fp);
