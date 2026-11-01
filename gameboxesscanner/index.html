@@ -453,7 +453,7 @@
 </nav>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="games.js?v=41"></script>
+<script src="games.js?v=42"></script>
 <script>
 // ── Data layer ──────────────────────────────────────────────────────────────
 const LS_KEY = 'gameboxes_overrides';
@@ -527,6 +527,8 @@ function findByEan(ean) {
 }
 
 function upsertOverride(game) {
+  // Stamp the write so the server can tell a fresh change from an old copy.
+  game.t = Date.now();
   const overrides = loadOverrides();
   if (game.id) {
     const idx = overrides.findIndex(o => o.id === game.id);
@@ -900,7 +902,7 @@ document.getElementById('form-save').addEventListener('click', async () => {
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
-const APP_VERSION = 'v41';
+const APP_VERSION = 'v42';
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 // localStorage is per-device, so a code scanned on the phone never reached the

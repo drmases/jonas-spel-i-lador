@@ -74,9 +74,15 @@ function clean($g) {
         $id = '';
     }
 
+    // When this entry was last written, so a device holding an old copy cannot
+    // undo a newer change. Entries predating this carry 0 and always lose.
+    $t = isset($g['t']) ? (int)$g['t'] : 0;
+    if ($t < 0) $t = 0;
+
     // Note: status is deliberately absent. Full/luft belongs to the box, not
     // the game, and lives in games.js — a stale copy here would overwrite it.
     return [
+        't'     => $t,
         'id'    => $id === '' ? null : $id,
         'ean'   => $ean === '' ? null : $ean,
         'namn'  => cut($namn, 200),
@@ -108,10 +114,29 @@ function absorb(&$entries, &$index, $c, $only) {
         $entries[] = $c;
         $hit = count($entries) - 1;
     } else {
+        $existing = $entries[$hit];
+        $newer = $c['t'] >= $existing['t'];
         foreach (['id', 'ean', 'namn', 'låda', 'värde'] as $f) {
             if ($only !== null && !in_array($f, $only, true)) continue;
-            $entries[$hit][$f] = $c[$f];
+
+            // An identifier the stored entry lacks is always worth adopting:
+            // it is what lets a code-keyed and an id-keyed copy fold together.
+            if (($f === 'id' || $f === 'ean') && $existing[$f] === null) {
+                $entries[$hit][$f] = $c[$f];
+                continue;
+            }
+
+            // Never let an unset value erase a grade unless it is genuinely
+            // newer. A device on an old copy posts nulls it has no business
+            // asserting, which is how 35 grades were lost.
+            if ($f === 'värde' && $c[$f] === null && $existing[$f] !== null
+                && $c['t'] <= $existing['t']) {
+                continue;
+            }
+
+            if ($newer) $entries[$hit][$f] = $c[$f];
         }
+        $entries[$hit]['t'] = max($existing['t'], $c['t']);
     }
     foreach (entry_keys($entries[$hit]) as $k) { $index[$k] = $hit; }
 }
