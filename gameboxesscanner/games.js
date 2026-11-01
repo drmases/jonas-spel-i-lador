@@ -31,6 +31,7 @@ window.BOXES = [
   {id:"R", status:"full", förråd:"Kap 13"},
   {id:"S", status:null, förråd:"Kap 13"},
   {id:"T", status:null, förråd:"Kap 13"},
+  {id:"U", status:null, förråd:"Kap 13"},
   {id:"Garderob", status:null, förråd:"Kap 13"},
 ];
 
