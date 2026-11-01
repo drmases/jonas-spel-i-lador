@@ -155,6 +155,7 @@
   .badge-luft { background: rgba(34,211,238,.12); color: var(--cyan); border: 1px solid rgba(34,211,238,.4); }
   .badge-null { background: rgba(21,49,77,.5); color: var(--muted); border: 1px solid var(--line); }
   .badge-room { background: rgba(168,85,247,.14); color: var(--violet); border: 1px solid rgba(168,85,247,.45); }
+  .badge-v0 { background: rgba(245,158,11,.1); color: var(--amber); border: 1px dashed rgba(245,158,11,.5); }
   .badge-v1 { background: rgba(21,49,77,.5);   color: var(--muted); border: 1px solid var(--line); }
   .badge-v2 { background: rgba(34,211,238,.1); color: var(--cyan);  border: 1px solid rgba(34,211,238,.35); }
   .badge-v3 { background: rgba(245,158,11,.16);color: var(--amber); border: 1px solid rgba(245,158,11,.45); }
@@ -206,6 +207,7 @@
     display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
   }
   .game-card-sub .badge { margin-top: 0; padding: 2px 8px; font-size: 9px; }
+  .game-card-sub .ean { font-family: var(--mono); letter-spacing: 0; text-transform: none; }
   .edit-btn {
     background: none; border: 1px solid var(--line); color: var(--muted);
     padding: 7px 13px; cursor: pointer; clip-path: var(--clip-sm);
@@ -268,9 +270,21 @@
     background: linear-gradient(90deg, transparent, var(--line) 15%, var(--cyan-dim) 50%, var(--line) 85%, transparent);
   }
   #game-list-header {
-    font-size: 10px; color: var(--muted); margin-bottom: 12px;
+    font-size: 10px; color: var(--muted);
     letter-spacing: .18em; text-transform: uppercase;
   }
+  #game-list-header .warn { color: var(--amber); }
+  .list-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .toggle {
+    display: flex; align-items: center; gap: 7px; cursor: pointer;
+    font-family: var(--head); font-size: 10px; font-weight: 600; color: var(--muted);
+    letter-spacing: .14em; text-transform: uppercase; margin: 0;
+  }
+  .toggle input { accent-color: var(--cyan); width: 15px; height: 15px; }
+  .toggle:hover { color: var(--cyan); }
   #no-results {
     color: var(--muted); text-align: center; padding: 36px;
     font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
@@ -369,7 +383,10 @@
   </div>
 
   <hr class="divider">
-  <div id="game-list-header"></div>
+  <div class="list-head">
+    <div id="game-list-header"></div>
+    <label class="toggle"><input type="checkbox" id="only-missing"> Bara utan värde</label>
+  </div>
   <div id="all-games-list"></div>
 
   <details id="settings">
@@ -544,7 +561,8 @@ function statusBadge(status) {
 function gameCard(g, showEdit = false) {
   const sub = g.ean ? `EAN: ${g.ean}` : '';
   const room = boxRoom(g.låda);
-  const badge = statusBadge(boxStatus(g.låda)) + valueBadge(g.värde)
+  const badge = statusBadge(boxStatus(g.låda))
+    + (g.värde ? valueBadge(g.värde) : (showEdit ? '<span class="badge badge-v0">Värde ?</span>' : ''))
     + (room ? `<span class="badge badge-room">${room}</span>` : '');
   let btn = '';
   if (showEdit) {
@@ -553,10 +571,10 @@ function gameCard(g, showEdit = false) {
     btn = `<button class="edit-btn" onclick="addEan(${JSON.stringify(g).replace(/"/g,'&quot;')})">+ EAN</button>`;
   }
   return `<div class="game-card">
-    <div class="game-card-box">${g.låda}</div>
+    <div class="game-card-box">${g.låda === 'Garderob' ? 'GRD' : g.låda}</div>
     <div class="game-card-info">
       <div class="game-card-name">${g.namn}</div>
-      <div class="game-card-sub">${boxLabel(g.låda)} ${badge} ${sub}</div>
+      <div class="game-card-sub">${badge}${sub ? `<span class="ean">${sub}</span>` : ''}</div>
     </div>
     ${btn}
   </div>`;
@@ -819,8 +837,14 @@ searchInput.addEventListener('input', () => {
 
 // ── Add / Edit ────────────────────────────────────────────────────────────────
 function renderAllGames() {
-  const games = allGames();
-  document.getElementById('game-list-header').textContent = `${games.length} spel i samlingen`;
+  const all = allGames();
+  const missing = all.filter(g => !g.värde).length;
+  const onlyMissing = document.getElementById('only-missing').checked;
+  const games = onlyMissing ? all.filter(g => !g.värde) : all;
+
+  document.getElementById('game-list-header').innerHTML =
+    `${all.length} spel i samlingen`
+    + (missing ? ` · <span class="warn">${missing} utan värde</span>` : ' · alla graderade');
   document.getElementById('all-games-list').innerHTML = games.map(g => gameCard(g, true)).join('');
   if (window.refreshBackupCount) window.refreshBackupCount();
 }
@@ -1138,6 +1162,7 @@ document.getElementById('form-scan-btn').addEventListener('click', async () => {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('form-box').insertAdjacentHTML('beforeend', boxOptionsHtml());
+document.getElementById('only-missing').addEventListener('change', renderAllGames);
 initScanner();
 renderAllGames();
 
