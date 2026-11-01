@@ -268,33 +268,315 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>
-const data=[
-  {id:"A",status:"full",förråd:"Kap 13",games:[{n:"Survive: Escape from Atlantis!",v:null},{n:"Francis Drake",v:null},{n:"Scotland Yard",v:null},{n:"Manhattan",v:null},{n:"Power Grid",v:null},{n:"Fast Sloths",v:null},{n:"Shogun",v:null}]},
-  {id:"B",status:"full",förråd:"Kap 13",games:[{n:"Vast: The Crystal Caverns",v:null},{n:"Menara",v:null},{n:"Ave Caesar",v:null},{n:"Robo Rally",v:null},{n:"Flick 'Em Up",v:null}]},
-  {id:"C",status:null,förråd:"Kap 13",games:[{n:"Pret-à-Porter",v:null},{n:"Escape from the Aliens in Outer Space",v:null},{n:"Crisis",v:null},{n:"Belfort",v:null},{n:"Brew Crafters",v:null},{n:"Race to the Rhine",v:null},{n:"Medieval",v:null},{n:"Eminent Domain",v:null},{n:"Brass: Lancashire",v:null},{n:"Paris Connection",v:null},{n:"North American Railways",v:null},{n:"Skyrise",v:null}]},
-  {id:"D",status:null,förråd:"Kap 13",games:[{n:"Tärningar + stuff",v:null},{n:"The Isle of Cats",v:null},{n:"Sidereal Confluence",v:null},{n:"Village Rails",v:null},{n:"Switch & Signal",v:null},{n:"Ghost Stories",v:null}]},
-  {id:"E",status:"luft",förråd:"Kap 13",games:[{n:"HeroQuest",v:null},{n:"Welcome to the Dungeon",v:null},{n:"Welcome Back to the Dungeon",v:null},{n:"One Night Ultimate Werewolf",v:null},{n:"The Crew: The Quest for Planet Nine",v:null},{n:"King of Tokyo: Power Up",v:null},{n:"King of Tokyo: Halloween",v:null},{n:"Spartacus",v:null},{n:"Castle Panic: The Dark Titan",v:null},{n:"Doppelt so clever",v:null},{n:"After the Virus",v:null},{n:"Power Struggle",v:null},{n:"Concordia: Salsa",v:null},{n:"Imperia 2030",v:null},{n:"Hive",v:null}]},
-  {id:"F",status:"luft",förråd:"Kap 13",games:[{n:"Kemet + expansion",v:null},{n:"Cyclades",v:null},{n:"Doom: The Board Game",v:null},{n:"Bridges of Shangri-La",v:null},{n:"Blood Bowl",v:null},{n:"The Thing: Infection at Outpost 31",v:null},{n:"Concordia",v:null}]},
-  {id:"G",status:"luft",förråd:"Kap 13",games:[{n:"Scythe + expansions",v:null},{n:"World of Warcraft: The Board Game – expansion",v:null},{n:"Magic: The Gathering",v:null},{n:"Ziplockpåsar i massor",v:null},{n:"Castle Itter",v:null},{n:"Circus Flohcati",v:null},{n:"Helt Genialt",v:null},{n:"Fünf Gurken",v:null}]},
-  {id:"H",status:"full",förråd:"Kap 13",games:[{n:"King of New York + expansion",v:null},{n:"Euphoria",v:null},{n:"Mottainai",v:null},{n:"Mord im Arosa",v:null},{n:"The Bloody Inn",v:null},{n:"Twilight Struggle",v:null},{n:"Food Chain Magnate",v:null},{n:"Legendary",v:null},{n:"Conquest of Planet Earth",v:null},{n:"Star Wars: Rebellion + expansion",v:null},{n:"Bock Rock",v:null}]},
-  {id:"I",status:null,förråd:"Kap 13",games:[{n:"Legendary – tillbehör och extra material",v:null}]},
-  {id:"J1",status:"full",förråd:"Kap 13",games:[{n:"Rivet Wars",v:null},{n:"Istanbul + expansion",v:null},{n:"Onward to Venus",v:null},{n:"Junta: Viva el Presidente",v:null},{n:"Courtier",v:null},{n:"Archeos Society",v:null},{n:"Lord of the Rings: The Card Game",v:null},{n:"Pipeline",v:null},{n:"A Study in Emerald (Second Edition)",v:null},{n:"Colt Super Express",v:null},{n:"Beasty Bar",v:null},{n:"FlipToons",v:null},{n:"Torchlit",v:null}]},
-  {id:"J2",status:null,förråd:"Kap 13",games:[{n:"Race for the Galaxy + expansion",v:null},{n:"Fantasy Business",v:null},{n:"Nuns on the Run",v:null},{n:"Hive",v:null},{n:"Gamla kortspel",v:null},{n:"Dogs of War",v:null},{n:"Rapido",v:null},{n:"300: Earth & Water",v:null}]},
-  {id:"K",status:"full",förråd:"Kap 13",games:[{n:"The Rivals for Catan",v:null},{n:"Small World",v:null},{n:"Small World Underground",v:null},{n:"Small World Underground: Be Not Afraid…",v:null},{n:"Small World Underground: Spider's Web",v:null},{n:"Chimera Station",v:null},{n:"Heckmeck am Bratwurmeck",v:null},{n:"Bang! The Dice Game",v:null},{n:"Bang! The Bullet",v:null},{n:"Dixit",v:null},{n:"Deep Space D-6",v:null},{n:"Cash 'n Guns – expansion",v:null},{n:"Dead of Winter: A Crossroads Game",v:null},{n:"Illuminati",v:null},{n:"Operation F.A.U.S.T.",v:null},{n:"Gulyabani",v:null},{n:"Lost Legacy",v:null},{n:"Abyss: Kraken",v:null},{n:"Abyss: Leviathan",v:null},{n:"Kakerlaken Poker Royal",v:null}]},
-  {id:"L",status:"full",förråd:"Kap 13",games:[{n:"Lifeboat",v:null},{n:"Euphoria – expansion",v:null},{n:"Elysium",v:null},{n:"Fury of Dracula",v:null},{n:"Point Salad",v:null},{n:"Cosmic Encounter + expansions",v:null},{n:"Barcelona",v:null},{n:"Mission: Red Planet",v:null},{n:"A Game of Thrones: The Board Game",v:null},{n:"Insider",v:null},{n:"Ticket to Ride: Europe 1912",v:null},{n:"Blitz",v:null},{n:"Planet",v:null}]},
-  {id:"M",status:"full",förråd:"Kap 13",games:[{n:"The Doolittle Raid",v:null},{n:"A Game of Thrones – expansion",v:null},{n:"Kick-Ass: The Board Game",v:null},{n:"Container",v:null},{n:"A Touch of Evil",v:null},{n:"Ticket to Ride",v:null},{n:"Carnival Zombie",v:null},{n:"The Resistance: Avalon",v:null},{n:"Exit",v:null},{n:"Lord of the Rings: The Card Game",v:null},{n:"Sky Runners",v:null}]},
-  {id:"N",status:null,förråd:"Kap 13",games:[{n:"Thunderbolt Apache Leader",v:null},{n:"Corsair Leader",v:null},{n:"RAF",v:null},{n:"Sherman Leader",v:null},{n:"Days of Ire",v:null},{n:"Phantom Leader",v:null},{n:"Fields of Fire",v:null},{n:"Thunder Alley",v:null}]},
-  {id:"O",status:"luft",förråd:"Kap 13",games:[{n:"Tärningar + stuff",v:null},{n:"The Isle of Cats",v:null},{n:"Sidereal Confluence",v:null},{n:"Village Rails",v:null},{n:"Switch & Signal",v:null},{n:"Ghost Stories",v:null},{n:"Furnace",v:null}]},
-  {id:"P",status:null,förråd:"Kap 13",games:[{n:"The Siege of Runedar",v:null},{n:"Circus Topito",v:null},{n:"Evil Dead: The Board Game",v:null},{n:"Northern Pacific",v:null},{n:"That's Life!",v:null},{n:"Beyond the Sun",v:null},{n:"Hit Z Road",v:null},{n:"Hollywood",v:null},{n:"Diner",v:null},{n:"Uluru",v:null},{n:"Make 'n' Break",v:null},{n:"Yardmaster",v:null},{n:"Yardmaster Express",v:null},{n:"Millions of Dollars",v:null},{n:"Kontor",v:null},{n:"Cabanga!",v:null},{n:"Fishing",v:null},{n:"Bärenpark",v:null}]},
-  {id:"Q",status:"luft",förråd:"Kap 13",games:[{n:"Hotel Mystery",v:null},{n:"Parade",v:null},{n:"Don't Mess with Cthulhu",v:null},{n:"The Boss",v:null},{n:"Tem-Purr-A",v:null},{n:"Thurn & Taxis",v:null},{n:"Kick-Ass",v:null},{n:"Mahjong",v:null},{n:"Nemo's War",v:null},{n:"Splendor",v:null},{n:"Gravwell",v:null},{n:"Battle for Souls",v:null},{n:"Raccoon Tycoon",v:null},{n:"Innovation Deluxe",v:null},{n:"Déjà Vu?",v:null},{n:"For Sale",v:null},{n:"Push",v:null},{n:"Scout",v:null},{n:"The Crew: The Quest for Planet Nine",v:null},{n:"Deep Sea Adventure",v:null},{n:"Las Vegas",v:null},{n:"No Thanks!",v:null},{n:"3 Witches",v:null},{n:"Mori",v:null},{n:"Cockroach Salad",v:null},{n:"Biblios",v:null},{n:"Sprawlopolis",v:null},{n:"Tax the Rich",v:null}]},
-  {id:"R",status:"full",förråd:"Kap 13",games:[{n:"Marvel Legendary",v:null},{n:"Colony",v:null},{n:"Trickerion",v:null},{n:"Tiny Towns",v:null},{n:"Abyss",v:null},{n:"Caverna",v:null},{n:"Room 25",v:null}]},
-  {id:"S",status:null,förråd:"Kap 13",games:[{n:"Jorvik",v:null},{n:"Skyliners",v:null},{n:"Toledo",v:null},{n:"Keltis",v:null},{n:"Cartagena",v:null},{n:"Falling Sky",v:null},{n:"The Artemis Project",v:null},{n:"Raptor",v:null},{n:"City of Horror",v:null},{n:"Mall of Horror",v:null}]},
-  {id:"T",status:null,förråd:"Kap 13",games:[{n:"The Gallerist",v:null},{n:"Space Hulk",v:null},{n:"Stronghold",v:null},{n:"Horrified",v:null},{n:"Azul",v:null},{n:"Bandu",v:null},{n:"Imperial",v:null},{n:"Coffee Traders",v:null}]},
-  {id:"U",status:null,förråd:"Kap 13",games:[{n:"Oceanos",v:null},{n:"Niagara",v:null},{n:"Sagan om ringen",v:null}]},
-  {id:"🚪 Garderob",status:null,förråd:"Kap 13",games:[{n:"Carcassonne",v:null},{n:"Las Vegas",v:null},{n:"Cyclades: Titans",v:null},{n:"Rising Sun",v:null},{n:"Carson City",v:null},{n:"Barrage",v:null},{n:"Kanban EV",v:null},{n:"Dominant Species",v:null},{n:"Archipelago",v:null},{n:"The Castles of Burgundy",v:null},{n:"Roll Player",v:null},{n:"Wonderlands War",v:null},{n:"Sorcerer",v:null},{n:"Smartphone Inc.",v:null},{n:"Rebel Princess",v:null},{n:"Hamburg",v:null},{n:"Tokyo Highway",v:null},{n:"Septima",v:null},{n:"Race to Moscow",v:null},{n:"Cuba Libre",v:null},{n:"The Thing: The Boardgame",v:null},{n:"Jórvík",v:null},{n:"The Lord of the Rings: The Fellowship of the Ring – Trick-Taking Game",v:null},{n:"The Lord of the Rings: The Two Towers – Trick-Taking Game",v:null},{n:"Ethnos: 2nd Edition",v:null},{n:"Sea Salt & Paper",v:null},{n:"Spaghettin",v:null},{n:"Barbecubes",v:null},{n:"Don't Go In There",v:null},{n:"Blood Rage",v:null}]}
+const BOXES=[
+  {id:"A",status:"full",förråd:"Kap 13"},
+  {id:"B",status:"full",förråd:"Kap 13"},
+  {id:"C",status:null,förråd:"Kap 13"},
+  {id:"D",status:null,förråd:"Kap 13"},
+  {id:"E",status:"luft",förråd:"Kap 13"},
+  {id:"F",status:"luft",förråd:"Kap 13"},
+  {id:"G",status:"luft",förråd:"Kap 13"},
+  {id:"H",status:"full",förråd:"Kap 13"},
+  {id:"I",status:null,förråd:"Kap 13"},
+  {id:"J1",status:"full",förråd:"Kap 13"},
+  {id:"J2",status:null,förråd:"Kap 13"},
+  {id:"K",status:"full",förråd:"Kap 13"},
+  {id:"L",status:"full",förråd:"Kap 13"},
+  {id:"M",status:"full",förråd:"Kap 13"},
+  {id:"N",status:null,förråd:"Kap 13"},
+  {id:"O",status:"luft",förråd:"Kap 13"},
+  {id:"P",status:null,förråd:"Kap 13"},
+  {id:"Q",status:"luft",förråd:"Kap 13"},
+  {id:"R",status:"full",förråd:"Kap 13"},
+  {id:"S",status:null,förråd:"Kap 13"},
+  {id:"T",status:null,förråd:"Kap 13"},
+  {id:"U",status:null,förråd:"Kap 13"},
+  {id:"Garderob",status:null,förråd:"Kap 13"}
 ];
 
-let filters={room:'all',status:'all'},currentSearch='';
+const SEED=[
+  {i:"g001",n:"Survive: Escape from Atlantis!",b:"A",v:null},
+  {i:"g002",n:"Francis Drake",b:"A",v:null},
+  {i:"g003",n:"Scotland Yard",b:"A",v:null},
+  {i:"g004",n:"Manhattan",b:"A",v:null},
+  {i:"g005",n:"Power Grid",b:"A",v:null},
+  {i:"g006",n:"Fast Sloths",b:"A",v:null},
+  {i:"g007",n:"Shogun",b:"A",v:null},
+  {i:"g008",n:"Vast: The Crystal Caverns",b:"B",v:null},
+  {i:"g009",n:"Menara",b:"B",v:null},
+  {i:"g010",n:"Ave Caesar",b:"B",v:null},
+  {i:"g011",n:"Robo Rally",b:"B",v:null},
+  {i:"g012",n:"Flick 'Em Up",b:"B",v:null},
+  {i:"g013",n:"Pret-à-Porter",b:"C",v:null},
+  {i:"g014",n:"Escape from the Aliens in Outer Space",b:"C",v:null},
+  {i:"g015",n:"Crisis",b:"C",v:null},
+  {i:"g016",n:"Belfort",b:"C",v:null},
+  {i:"g017",n:"Brew Crafters",b:"C",v:null},
+  {i:"g018",n:"Race to the Rhine",b:"C",v:null},
+  {i:"g019",n:"Medieval",b:"C",v:null},
+  {i:"g020",n:"Eminent Domain",b:"C",v:null},
+  {i:"g021",n:"Brass: Lancashire",b:"C",v:null},
+  {i:"g022",n:"Paris Connection",b:"C",v:null},
+  {i:"g023",n:"Tärningar + stuff",b:"D",v:null},
+  {i:"g024",n:"The Isle of Cats",b:"D",v:null},
+  {i:"g025",n:"Sidereal Confluence",b:"D",v:null},
+  {i:"g026",n:"Village Rails",b:"D",v:null},
+  {i:"g027",n:"Switch & Signal",b:"D",v:null},
+  {i:"g028",n:"Ghost Stories",b:"D",v:null},
+  {i:"g029",n:"HeroQuest",b:"E",v:null},
+  {i:"g030",n:"Welcome to the Dungeon",b:"E",v:null},
+  {i:"g031",n:"Welcome Back to the Dungeon",b:"E",v:null},
+  {i:"g032",n:"One Night Ultimate Werewolf",b:"E",v:null},
+  {i:"g033",n:"The Crew: The Quest for Planet Nine",b:"E",v:null},
+  {i:"g034",n:"King of Tokyo: Power Up",b:"E",v:null},
+  {i:"g035",n:"King of Tokyo: Halloween",b:"E",v:null},
+  {i:"g036",n:"Spartacus",b:"E",v:null},
+  {i:"g037",n:"Castle Panic: The Dark Titan",b:"E",v:null},
+  {i:"g038",n:"Doppelt so clever",b:"E",v:null},
+  {i:"g039",n:"After the Virus",b:"E",v:null},
+  {i:"g040",n:"Power Struggle",b:"E",v:null},
+  {i:"g041",n:"Concordia: Salsa",b:"E",v:null},
+  {i:"g042",n:"Imperia 2030",b:"E",v:null},
+  {i:"g043",n:"Hive",b:"E",v:null},
+  {i:"g044",n:"Hotel Mystery",b:"Q",v:null},
+  {i:"g045",n:"Kemet + expansion",b:"F",v:null},
+  {i:"g046",n:"Cyclades",b:"F",v:null},
+  {i:"g047",n:"Doom: The Board Game",b:"F",v:null},
+  {i:"g048",n:"Bridges of Shangri-La",b:"F",v:null},
+  {i:"g049",n:"Blood Bowl",b:"F",v:null},
+  {i:"g050",n:"The Thing: Infection at Outpost 31",b:"F",v:null},
+  {i:"g051",n:"Scythe + expansions",b:"G",v:null},
+  {i:"g052",n:"World of Warcraft: The Board Game – expansion",b:"G",v:null},
+  {i:"g053",n:"Magic: The Gathering",b:"G",v:null},
+  {i:"g054",n:"Ziplockpåsar i massor",b:"G",v:null},
+  {i:"g055",n:"Castle Itter",b:"G",v:null},
+  {i:"g056",n:"Parade",b:"Q",v:null},
+  {i:"g057",n:"Don't Mess with Cthulhu",b:"Q",v:null},
+  {i:"g058",n:"King of New York + expansion",b:"H",v:null},
+  {i:"g059",n:"Euphoria",b:"H",v:null},
+  {i:"g060",n:"Mottainai",b:"H",v:null},
+  {i:"g061",n:"Mord im Arosa",b:"H",v:null},
+  {i:"g062",n:"The Bloody Inn",b:"H",v:null},
+  {i:"g063",n:"Twilight Struggle",b:"H",v:null},
+  {i:"g064",n:"Food Chain Magnate",b:"H",v:null},
+  {i:"g065",n:"Legendary",b:"H",v:null},
+  {i:"g066",n:"Conquest of Planet Earth",b:"H",v:null},
+  {i:"g067",n:"Star Wars: Rebellion + expansion",b:"H",v:null},
+  {i:"g068",n:"Bock Rock",b:"H",v:null},
+  {i:"g069",n:"Legendary – tillbehör och extra material",b:"I",v:null},
+  {i:"g070",n:"Rivet Wars",b:"J1",v:null},
+  {i:"g071",n:"Istanbul + expansion",b:"J1",v:null},
+  {i:"g072",n:"Onward to Venus",b:"J1",v:null},
+  {i:"g073",n:"Carcassonne",b:"Garderob",v:null},
+  {i:"g074",n:"Junta: Viva el Presidente",b:"J1",v:null},
+  {i:"g075",n:"Courtier",b:"J1",v:null},
+  {i:"g076",n:"Archeos Society",b:"J1",v:null},
+  {i:"g077",n:"Lord of the Rings: The Card Game",b:"J1",v:null},
+  {i:"g078",n:"Pipeline",b:"J1",v:null},
+  {i:"g079",n:"A Study in Emerald (Second Edition)",b:"J1",v:null},
+  {i:"g080",n:"Race for the Galaxy + expansion",b:"J2",v:null},
+  {i:"g081",n:"Fantasy Business",b:"J2",v:null},
+  {i:"g082",n:"Nuns on the Run",b:"J2",v:null},
+  {i:"g083",n:"Hive",b:"J2",v:null},
+  {i:"g084",n:"Gamla kortspel",b:"J2",v:null},
+  {i:"g085",n:"Dogs of War",b:"J2",v:null},
+  {i:"g086",n:"Rapido",b:"J2",v:null},
+  {i:"g087",n:"300: Earth & Water",b:"J2",v:null},
+  {i:"g088",n:"The Rivals for Catan",b:"K",v:null},
+  {i:"g089",n:"Small World",b:"K",v:null},
+  {i:"g090",n:"Small World Underground",b:"K",v:null},
+  {i:"g091",n:"Small World Underground: Be Not Afraid…",b:"K",v:null},
+  {i:"g092",n:"Small World Underground: Spider's Web",b:"K",v:null},
+  {i:"g093",n:"Chimera Station",b:"K",v:null},
+  {i:"g094",n:"Heckmeck am Bratwurmeck",b:"K",v:null},
+  {i:"g095",n:"Bang! The Dice Game",b:"K",v:null},
+  {i:"g096",n:"Bang! The Bullet",b:"K",v:null},
+  {i:"g097",n:"Dixit",b:"K",v:null},
+  {i:"g098",n:"The Boss",b:"Q",v:null},
+  {i:"g099",n:"Circus Flohcati",b:"G",v:null},
+  {i:"g100",n:"Deep Space D-6",b:"K",v:null},
+  {i:"g101",n:"Cash 'n Guns – expansion",b:"K",v:null},
+  {i:"g102",n:"Dead of Winter: A Crossroads Game",b:"K",v:null},
+  {i:"g103",n:"Illuminati",b:"K",v:null},
+  {i:"g104",n:"Operation F.A.U.S.T.",b:"K",v:null},
+  {i:"g105",n:"Las Vegas",b:"Garderob",v:null},
+  {i:"g106",n:"Gulyabani",b:"K",v:null},
+  {i:"g107",n:"Lost Legacy",b:"K",v:null},
+  {i:"g108",n:"Abyss: Kraken",b:"K",v:null},
+  {i:"g109",n:"Abyss: Leviathan",b:"K",v:null},
+  {i:"g110",n:"Kakerlaken Poker Royal",b:"K",v:null},
+  {i:"g111",n:"Lifeboat",b:"L",v:null},
+  {i:"g112",n:"Euphoria – expansion",b:"L",v:null},
+  {i:"g113",n:"Elysium",b:"L",v:null},
+  {i:"g114",n:"Fury of Dracula",b:"L",v:null},
+  {i:"g115",n:"Point Salad",b:"L",v:null},
+  {i:"g116",n:"Cosmic Encounter + expansions",b:"L",v:null},
+  {i:"g117",n:"Barcelona",b:"L",v:null},
+  {i:"g118",n:"Mission: Red Planet",b:"L",v:null},
+  {i:"g119",n:"A Game of Thrones: The Board Game",b:"L",v:null},
+  {i:"g120",n:"Insider",b:"L",v:null},
+  {i:"g121",n:"Colt Super Express",b:"J1",v:null},
+  {i:"g122",n:"Ticket to Ride: Europe 1912",b:"L",v:null},
+  {i:"g123",n:"Blitz",b:"L",v:null},
+  {i:"g124",n:"Planet",b:"L",v:null},
+  {i:"g125",n:"The Doolittle Raid",b:"M",v:null},
+  {i:"g126",n:"A Game of Thrones – expansion",b:"M",v:null},
+  {i:"g127",n:"Kick-Ass: The Board Game",b:"M",v:null},
+  {i:"g128",n:"Container",b:"M",v:null},
+  {i:"g129",n:"A Touch of Evil",b:"M",v:null},
+  {i:"g130",n:"Ticket to Ride",b:"M",v:null},
+  {i:"g131",n:"Carnival Zombie",b:"M",v:null},
+  {i:"g132",n:"The Resistance: Avalon",b:"M",v:null},
+  {i:"g133",n:"Exit",b:"M",v:null},
+  {i:"g134",n:"Lord of the Rings: The Card Game",b:"M",v:null},
+  {i:"g135",n:"Sky Runners",b:"M",v:null},
+  {i:"g136",n:"Thunderbolt Apache Leader",b:"N",v:null},
+  {i:"g137",n:"Corsair Leader",b:"N",v:null},
+  {i:"g138",n:"RAF",b:"N",v:null},
+  {i:"g139",n:"Sherman Leader",b:"N",v:null},
+  {i:"g140",n:"Days of Ire",b:"N",v:null},
+  {i:"g141",n:"Phantom Leader",b:"N",v:null},
+  {i:"g142",n:"Fields of Fire",b:"N",v:null},
+  {i:"g143",n:"Thunder Alley",b:"N",v:null},
+  {i:"g144",n:"Tärningar + stuff",b:"O",v:null},
+  {i:"g145",n:"The Isle of Cats",b:"O",v:null},
+  {i:"g146",n:"Sidereal Confluence",b:"O",v:null},
+  {i:"g147",n:"Village Rails",b:"O",v:null},
+  {i:"g148",n:"Switch & Signal",b:"O",v:null},
+  {i:"g149",n:"Ghost Stories",b:"O",v:null},
+  {i:"g150",n:"Furnace",b:"O",v:null},
+  {i:"g151",n:"The Siege of Runedar",b:"P",v:null},
+  {i:"g152",n:"Circus Topito",b:"P",v:null},
+  {i:"g153",n:"Evil Dead: The Board Game",b:"P",v:null},
+  {i:"g154",n:"Northern Pacific",b:"P",v:null},
+  {i:"g155",n:"That's Life!",b:"P",v:null},
+  {i:"g156",n:"Beyond the Sun",b:"P",v:null},
+  {i:"g157",n:"Hit Z Road",b:"P",v:null},
+  {i:"g158",n:"Cyclades: Titans",b:"Garderob",v:null},
+  {i:"g159",n:"Hollywood",b:"P",v:null},
+  {i:"g160",n:"Diner",b:"P",v:null},
+  {i:"g161",n:"Uluru",b:"P",v:null},
+  {i:"g162",n:"Make 'n' Break",b:"P",v:null},
+  {i:"g163",n:"Tem-Purr-A",b:"Q",v:null},
+  {i:"g164",n:"Yardmaster",b:"P",v:null},
+  {i:"g165",n:"Yardmaster Express",b:"P",v:null},
+  {i:"g166",n:"Millions of Dollars",b:"P",v:null},
+  {i:"g167",n:"Beasty Bar",b:"J1",v:null},
+  {i:"g168",n:"Kontor",b:"P",v:null},
+  {i:"g169",n:"Thurn & Taxis",b:"Q",v:null},
+  {i:"g170",n:"Kick-Ass",b:"Q",v:null},
+  {i:"g171",n:"Mahjong",b:"Q",v:null},
+  {i:"g172",n:"Nemo's War",b:"Q",v:null},
+  {i:"g173",n:"Splendor",b:"Q",v:null},
+  {i:"g174",n:"Gravwell",b:"Q",v:null},
+  {i:"g175",n:"Battle for Souls",b:"Q",v:null},
+  {i:"g176",n:"Raccoon Tycoon",b:"Q",v:null},
+  {i:"g177",n:"Innovation Deluxe",b:"Q",v:null},
+  {i:"g178",n:"Déjà Vu?",b:"Q",v:null},
+  {i:"g179",n:"For Sale",b:"Q",v:null},
+  {i:"g180",n:"Push",b:"Q",v:null},
+  {i:"g181",n:"Scout",b:"Q",v:null},
+  {i:"g182",n:"The Crew: The Quest for Planet Nine",b:"Q",v:null},
+  {i:"g183",n:"Deep Sea Adventure",b:"Q",v:null},
+  {i:"g184",n:"Las Vegas",b:"Q",v:null},
+  {i:"g185",n:"No Thanks!",b:"Q",v:null},
+  {i:"g186",n:"Marvel Legendary",b:"R",v:null},
+  {i:"g187",n:"Colony",b:"R",v:null},
+  {i:"g188",n:"Trickerion",b:"R",v:null},
+  {i:"g189",n:"Tiny Towns",b:"R",v:null},
+  {i:"g190",n:"Abyss",b:"R",v:null},
+  {i:"g191",n:"Caverna",b:"R",v:null},
+  {i:"g192",n:"Room 25",b:"R",v:null},
+  {i:"g193",n:"Jorvik",b:"S",v:null},
+  {i:"g194",n:"Skyliners",b:"S",v:null},
+  {i:"g195",n:"Toledo",b:"S",v:null},
+  {i:"g196",n:"Keltis",b:"S",v:null},
+  {i:"g197",n:"Cartagena",b:"S",v:null},
+  {i:"g198",n:"Falling Sky",b:"S",v:null},
+  {i:"g199",n:"The Artemis Project",b:"S",v:null},
+  {i:"g200",n:"Raptor",b:"S",v:null},
+  {i:"g201",n:"City of Horror",b:"S",v:null},
+  {i:"g202",n:"Mall of Horror",b:"S",v:null},
+  {i:"g203",n:"The Gallerist",b:"T",v:null},
+  {i:"g204",n:"Space Hulk",b:"T",v:null},
+  {i:"g205",n:"Stronghold",b:"T",v:null},
+  {i:"g206",n:"Horrified",b:"T",v:null},
+  {i:"g207",n:"Azul",b:"T",v:null},
+  {i:"g208",n:"Rising Sun",b:"Garderob",v:null},
+  {i:"g209",n:"Bandu",b:"T",v:null},
+  {i:"g210",n:"Carson City",b:"Garderob",v:null},
+  {i:"g211",n:"Barrage",b:"Garderob",v:null},
+  {i:"g212",n:"Kanban EV",b:"Garderob",v:null},
+  {i:"g213",n:"Imperial",b:"T",v:null},
+  {i:"g214",n:"Concordia",b:"F",v:null},
+  {i:"g215",n:"Coffee Traders",b:"T",v:null},
+  {i:"g216",n:"Dominant Species",b:"Garderob",v:null},
+  {i:"g217",n:"Archipelago",b:"Garderob",v:null},
+  {i:"g218",n:"The Castles of Burgundy",b:"Garderob",v:null},
+  {i:"g219",n:"Roll Player",b:"Garderob",v:null},
+  {i:"g220",n:"Wonderlands War",b:"Garderob",v:null},
+  {i:"g221",n:"Sorcerer",b:"Garderob",v:null},
+  {i:"g222",n:"Smartphone Inc.",b:"Garderob",v:null},
+  {i:"g223",n:"Rebel Princess",b:"Garderob",v:null},
+  {i:"g224",n:"North American Railways",b:"C",v:null},
+  {i:"g225",n:"Hamburg",b:"Garderob",v:null},
+  {i:"g226",n:"Tokyo Highway",b:"Garderob",v:null},
+  {i:"g227",n:"Septima",b:"Garderob",v:null},
+  {i:"g228",n:"Race to Moscow",b:"Garderob",v:null},
+  {i:"g229",n:"Cuba Libre",b:"Garderob",v:null},
+  {i:"g230",n:"The Thing: The Boardgame",b:"Garderob",v:null},
+  {i:"g231",n:"Jórvík",b:"Garderob",v:null},
+  {i:"g232",n:"FlipToons",b:"J1",v:null},
+  {i:"g233",n:"The Lord of the Rings: The Fellowship of the Ring – Trick-Taking Game",b:"Garderob",v:null},
+  {i:"g234",n:"The Lord of the Rings: The Two Towers – Trick-Taking Game",b:"Garderob",v:null},
+  {i:"g235",n:"Ethnos: 2nd Edition",b:"Garderob",v:null},
+  {i:"g236",n:"Cabanga!",b:"P",v:null},
+  {i:"g237",n:"Sea Salt & Paper",b:"Garderob",v:null},
+  {i:"g238",n:"Spaghettin",b:"Garderob",v:null},
+  {i:"g239",n:"3 Witches",b:"Q",v:null},
+  {i:"g240",n:"Mori",b:"Q",v:null},
+  {i:"g241",n:"Cockroach Salad",b:"Q",v:null},
+  {i:"g242",n:"Biblios",b:"Q",v:null},
+  {i:"g243",n:"Sprawlopolis",b:"Q",v:null},
+  {i:"g244",n:"Torchlit",b:"J1",v:null},
+  {i:"g245",n:"Barbecubes",b:"Garderob",v:null},
+  {i:"g246",n:"Tax the Rich",b:"Q",v:null},
+  {i:"g247",n:"Fishing",b:"P",v:null},
+  {i:"g248",n:"Bärenpark",b:"P",v:null},
+  {i:"g249",n:"Helt Genialt",b:"G",v:null},
+  {i:"g250",n:"Skyrise",b:"C",v:null},
+  {i:"g251",n:"Fünf Gurken",b:"G",v:null},
+  {i:"g252",n:"Don't Go In There",b:"Garderob",v:null},
+  {i:"g253",n:"Blood Rage",b:"Garderob",v:null},
+  {i:"g254",n:"Oceanos",b:"U",v:null},
+  {i:"g255",n:"Niagara",b:"U",v:null},
+  {i:"g256",n:"Sagan om ringen",b:"U",v:null}
+];
+
+// The box list is static, but games move and get added in the scanner. Read
+// the shared store so this page shows the collection as it actually stands.
+let games = SEED.map(g => ({ ...g }));
+let filters = { room:'all', status:'all' }, currentSearch='';
+
+function applyServer(list){
+  const byId = new Map(), byName = new Map();
+  games.forEach(g => {
+    byId.set(g.i, g);
+    const k = g.n.toLowerCase();
+    if (!byName.has(k)) byName.set(k, g);
+  });
+  list.forEach(o => {
+    const g = (o.id && byId.get(o.id)) || byName.get((o.namn||'').toLowerCase());
+    if (g) {
+      if (o['låda']) g.b = o['låda'];
+      g.v = o['värde'] != null ? o['värde'] : null;
+    } else if (o.namn && o['låda']) {
+      const ng = { i:o.id||('x'+games.length), n:o.namn, b:o['låda'], v:o['värde']!=null?o['värde']:null };
+      games.push(ng);
+      byName.set(ng.n.toLowerCase(), ng);
+    }
+  });
+}
 
 function setFilter(kind,value,btn){
   filters[kind]=value;
@@ -321,32 +603,61 @@ function filterAll(){
 
 function render(){
   const grid=document.getElementById('grid');
+  grid.innerHTML='';
   let total=0;
-  data.forEach((box,i)=>{
-    total+=box.games.length;
+  BOXES.forEach((box,i)=>{
+    const list=games.filter(g=>g.b===box.id);
+    total+=list.length;
     const card=document.createElement('div');
     card.className='box-card';
     card.dataset.status=box.status||'normal';
     card.dataset.room=box.förråd;
     card.dataset.id=box.id;
-    card.dataset.games=box.games.map(g=>g.n).join(' ');
+    card.dataset.games=list.map(g=>g.n).join(' ');
     card.style.animationDelay=(i*0.03)+'s';
     let tag=`<span class="box-tag tag-room">${box.förråd}</span>`;
     if(box.status==='full') tag+='<span class="box-tag tag-full">Full</span>';
     else if(box.status==='luft') tag+='<span class="box-tag tag-luft">Luft</span>';
-    const lbl=box.status==='garderob'
+    const lbl=box.id==='Garderob'
       ?'<span class="box-label">Garderob</span>'
       :`<span class="box-label">Låda ${box.id}</span>`;
-    card.innerHTML=`<div class="box-header">${lbl}<div class="box-meta"><div class="tag-row">${tag}</div><span class="game-count">${box.games.length} spel</span></div></div><ul class="game-list">${box.games.map(g=>`<li>${g.n}${g.v?`<span class="val val-${g.v}">${g.v}</span>`:''}</li>`).join('')}</ul>`;
+    card.innerHTML=`<div class="box-header">${lbl}<div class="box-meta"><div class="tag-row">${tag}</div><span class="game-count">${list.length} spel</span></div></div>`
+      +`<ul class="game-list">${list.map(g=>`<li>${g.n}${g.v?`<span class="val val-${g.v}">${g.v}</span>`:''}</li>`).join('')}</ul>`;
     grid.appendChild(card);
   });
   const nr=document.createElement('p');
   nr.className='no-results';nr.textContent='Inga spel hittades.';nr.style.display='none';
   grid.appendChild(nr);
   document.getElementById('totalGames').textContent=total;
-  document.getElementById('totalBoxes').textContent=data.length;
+  document.getElementById('totalBoxes').textContent=BOXES.length;
+  filterAll();
 }
+
 render();
+
+function refresh(){
+  return fetch('/gameboxesscanner/api.php?read=1', { cache:'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if (!d || !Array.isArray(d.games)) return;
+      games = SEED.map(g => ({ ...g }));
+      applyServer(d.games);
+      render();
+    })
+    .catch(() => {});   // offline: the static list is still correct enough
+}
+
+refresh();
+
+// Pick up changes made in the scanner without needing a manual reload.
+let lastFetch = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (Date.now() - lastFetch < 10000) return;
+  lastFetch = Date.now();
+  refresh();
+});
+
 </script>
 </body>
 </html>

@@ -30,6 +30,26 @@ if ($secret === '' || $secret === 'byt-ut-mig') {
     send(500, ['error' => 'ingen nyckel satt i config.php']);
 }
 
+// Public read for the box list. It shows the same collection the site already
+// publishes, so a key would only add setup friction on every device. Codes and
+// timestamps stay out of this view, and writing still needs the key.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['read'])) {
+    $raw = @file_get_contents(__DIR__ . '/codes.json');
+    $data = json_decode($raw === false ? '' : $raw, true);
+    if (!is_array($data)) $data = [];
+    $out = [];
+    foreach ($data as $g) {
+        if (!is_array($g) || empty($g['namn']) || empty($g['låda'])) continue;
+        $out[] = [
+            'id'    => isset($g['id']) ? $g['id'] : null,
+            'namn'  => (string)$g['namn'],
+            'låda'  => (string)$g['låda'],
+            'värde' => isset($g['värde']) ? $g['värde'] : null,
+        ];
+    }
+    send(200, ['games' => $out, 'count' => count($out)]);
+}
+
 $given = isset($_GET['key']) ? (string)$_GET['key'] : '';
 if (!hash_equals($secret, $given)) {
     send(403, ['error' => 'fel nyckel']);
