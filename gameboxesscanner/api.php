@@ -67,9 +67,17 @@ function clean($g) {
         $varde = null;
     }
 
+    // A game's stable id from games.js. Several titles exist in two boxes, so
+    // the name alone cannot tell two entries apart.
+    $id = isset($g['id']) && $g['id'] !== null ? trim((string)$g['id']) : '';
+    if (!preg_match('/^[A-Za-z0-9_-]{1,32}$/', $id)) {
+        $id = '';
+    }
+
     // Note: status is deliberately absent. Full/luft belongs to the box, not
     // the game, and lives in games.js — a stale copy here would overwrite it.
     return [
+        'id'    => $id === '' ? null : $id,
         'ean'   => $ean === '' ? null : $ean,
         'namn'  => cut($namn, 200),
         'låda'  => cut($lada, 20),
@@ -78,6 +86,7 @@ function clean($g) {
 }
 
 function entry_key($g) {
+    if ($g['id'] !== null && $g['id'] !== '') return 'i:' . $g['id'];
     if ($g['ean'] !== null && $g['ean'] !== '') return 'e:' . $g['ean'];
     return 'n:' . lower($g['namn']);
 }

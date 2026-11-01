@@ -353,6 +353,7 @@
     <h1>Lägg till</h1>
     <a class="head-link" href="/gameboxes/">📚 Alla lådor</a>
   </div>
+  <input type="hidden" id="form-id">
   <div class="form-group">
     <label>EAN-kod</label>
     <div class="ean-row">
@@ -469,18 +470,24 @@ function allGames() {
   seed.forEach((g, i) => map.set('seed_' + i, {...g}));
   overrides.forEach(o => {
     let found = false;
-    // Match by EAN first
-    if (o.ean) {
+    // Id first: ten titles sit in two boxes, so a name cannot identify a game.
+    if (o.id) {
+      for (const [k, v] of map) { if (v.id === o.id) { map.set(k, {...v, ...o}); found = true; break; } }
+    }
+    // Then EAN
+    if (!found && o.ean) {
       for (const [k, v] of map) { if (sameEan(v.ean, o.ean)) { map.set(k, {...v, ...o}); found = true; break; } }
     }
-    // Fall back to name match (handles adding EAN to a seed entry with ean:null)
+    // Finally by name, which still covers entries saved before ids existed.
     if (!found && o.namn) {
       for (const [k, v] of map) {
         if (v.namn.toLowerCase() === o.namn.toLowerCase()) { map.set(k, {...v, ...o}); found = true; break; }
       }
     }
     if (!found) {
-      const key = o.ean ? 'override_' + normEan(o.ean) : o._id ? 'override_' + o._id : 'override_' + Math.random();
+      const key = o.id ? 'override_' + o.id
+        : o.ean ? 'override_' + normEan(o.ean)
+        : o._id ? 'override_' + o._id : 'override_' + Math.random();
       map.set(key, o);
     }
   });
@@ -518,6 +525,12 @@ function findByEan(ean) {
 
 function upsertOverride(game) {
   const overrides = loadOverrides();
+  if (game.id) {
+    const idx = overrides.findIndex(o => o.id === game.id);
+    if (idx >= 0) overrides[idx] = game; else overrides.push(game);
+    saveOverrides(overrides);
+    return;
+  }
   if (game.ean) {
     const idx = overrides.findIndex(o => sameEan(o.ean, game.ean));
     if (idx >= 0) overrides[idx] = game; else overrides.push(game);
@@ -589,6 +602,7 @@ function gameCard(g, showEdit = false) {
 }
 
 window.addEan = function(g) {
+  document.getElementById('form-id').value = g.id || '';
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelector('[data-panel="add"]').classList.add('active');
@@ -858,6 +872,7 @@ function renderAllGames() {
 }
 
 window.editGame = function(g) {
+  document.getElementById('form-id').value = g.id || '';
   document.getElementById('form-ean').value = g.ean || '';
   document.getElementById('form-name').value = g.namn || '';
   document.getElementById('form-box').value = g.låda || '';
@@ -875,8 +890,9 @@ document.getElementById('form-save').addEventListener('click', () => {
   const name = document.getElementById('form-name').value.trim();
   const box = document.getElementById('form-box').value;
   const value = Number(document.getElementById('form-value').value) || null;
+  const id = document.getElementById('form-id').value || null;
   if (!name || !box) { formMsg('Namn och låda krävs.', 'error'); return; }
-  upsertOverride({ ean, namn: name, låda: box, värde: value });
+  upsertOverride({ id, ean, namn: name, låda: box, värde: value });
   clearForm();
   renderAllGames();
   syncNow(true);
@@ -968,6 +984,7 @@ async function syncNow(quiet) {
   function mergeOne(g) {
     if (!g || !g.namn || !g.låda) return false;
     const entry = {
+      id: g.id || null,
       ean: g.ean || null,
       namn: String(g.namn),
       låda: String(g.låda),
@@ -1057,6 +1074,7 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
   const nameInput = document.getElementById('form-name');
 
   function fill(game) {
+    document.getElementById('form-id').value = game.id || '';
     nameInput.value = game.namn;
     document.getElementById('form-box').value = game.låda || '';
     const eanField = document.getElementById('form-ean');
@@ -1125,6 +1143,7 @@ function clearForm() {
   ['form-ean','form-name'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('form-box').value = '';
   document.getElementById('form-value').value = '';
+  document.getElementById('form-id').value = '';
 }
 
 // Mini scan button in form — opens the live scanner in an overlay and drops
@@ -1157,7 +1176,8 @@ document.getElementById('form-scan-btn').addEventListener('click', async () => {
         const game = findByEan(ean);
         if (game) {
           document.getElementById('form-name').value = game.namn;
-          document.getElementById('form-box').value = game.låda;
+          document.getElementById('form-id').value = game.id || '';
+    document.getElementById('form-box').value = game.låda;
     document.getElementById('form-value').value = game.värde || '';
         }
         close();
