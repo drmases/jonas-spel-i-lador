@@ -9,7 +9,7 @@
 // editing one would silently write to the other. Ids are assigned once and
 // must be preserved whenever this file is regenerated.
 
-window.GAMES_VERSION = 'v47';
+window.GAMES_VERSION = 'v48';
 
 window.BOXES = [
   {id:"A", status:"full", förråd:"Kap 13"},
@@ -70,7 +70,7 @@ window.GAMES = [
   {id:"g030", ean:null, namn:"Welcome to the Dungeon", låda:"E", värde:null},
   {id:"g031", ean:null, namn:"Welcome Back to the Dungeon", låda:"E", värde:null},
   {id:"g032", ean:null, namn:"One Night Ultimate Werewolf", låda:"E", värde:null},
-  {id:"g033", ean:null, namn:"The Crew: The Quest for Planet Nine", låda:"E", värde:null},
+  {id:"g033", ean:null, namn:"The Crew: The Quest for Planet Nine", låda:"Q", värde:null},
   {id:"g034", ean:null, namn:"King of Tokyo: Power Up", låda:"E", värde:null},
   {id:"g035", ean:null, namn:"King of Tokyo: Halloween", låda:"E", värde:null},
   {id:"g036", ean:null, namn:"Spartacus", låda:"E", värde:null},
@@ -219,7 +219,6 @@ window.GAMES = [
   {id:"g179", ean:null, namn:"For Sale", låda:"Q", värde:null},
   {id:"g180", ean:"4005556268283", namn:"Push", låda:"Q", värde:null},
   {id:"g181", ean:null, namn:"Scout", låda:"Q", värde:null},
-  {id:"g182", ean:null, namn:"The Crew: The Quest for Planet Nine", låda:"Q", värde:null},
   {id:"g183", ean:null, namn:"Deep Sea Adventure", låda:"Q", värde:null},
   {id:"g184", ean:null, namn:"Las Vegas", låda:"Q", värde:null},
   {id:"g185", ean:null, namn:"No Thanks!", låda:"Q", värde:null},

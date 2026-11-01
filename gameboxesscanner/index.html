@@ -461,7 +461,7 @@
 </nav>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="games.js?v=47"></script>
+<script src="games.js?v=48"></script>
 <script>
 // ── Data layer ──────────────────────────────────────────────────────────────
 const LS_KEY = 'gameboxes_overrides';
@@ -926,7 +926,7 @@ document.getElementById('form-delete').addEventListener('click', async () => {
   await saveAndSync({ id, ean, namn: label, låda: box || 'Garderob', värde: null, raderad: true }, label, 'Raderat');
 });
 
-const APP_VERSION = 'v47';
+const APP_VERSION = 'v48';
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 // localStorage is per-device, so a code scanned on the phone never reached the
