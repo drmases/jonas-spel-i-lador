@@ -406,10 +406,12 @@
       <label>Synknyckel — delas mellan dina enheter</label>
       <div class="ean-row">
         <input class="field" id="sync-key" type="password" placeholder="Nyckel från config.php" autocomplete="off">
+        <button class="scan-mini-btn" id="sync-reveal" title="Visa nyckeln">👁</button>
         <button class="scan-mini-btn" id="sync-save" title="Spara nyckel">💾</button>
       </div>
       <div class="btn-row" style="margin-top:10px">
         <button class="btn btn-secondary" id="sync-now">🔄 Synka nu</button>
+        <button class="btn btn-secondary" id="sync-check">🔍 Kolla servern</button>
       </div>
       <p id="sync-msg" style="font-size:13px;color:var(--muted);margin-top:10px">Synk av.</p>
     </div>
@@ -898,7 +900,7 @@ document.getElementById('form-save').addEventListener('click', async () => {
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
-const APP_VERSION = 'v39';
+const APP_VERSION = 'v40';
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 // localStorage is per-device, so a code scanned on the phone never reached the
@@ -961,6 +963,31 @@ async function syncNow(quiet) {
   });
 
   document.getElementById('sync-now').addEventListener('click', () => syncNow(false));
+
+  document.getElementById('sync-reveal').addEventListener('click', () => {
+    field.type = field.type === 'password' ? 'text' : 'password';
+  });
+
+  // Read-only look at what the server actually holds. Inferring this from
+  // symptoms has cost several wrong guesses; this just asks.
+  document.getElementById('sync-check').addEventListener('click', async () => {
+    const key = syncKey();
+    if (!key) { syncStatus('Ingen nyckel angiven på den här enheten.'); return; }
+    syncStatus('Hämtar från servern…');
+    try {
+      const res = await fetch('api.php?key=' + encodeURIComponent(key), { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { syncStatus('Servern svarade: ' + (data.error || res.status)); return; }
+      const g = Array.isArray(data.games) ? data.games : [];
+      const graded = g.filter(x => x.värde).length;
+      const withId = g.filter(x => x.id).length;
+      const sample = g.filter(x => x.värde).slice(0, 3).map(x => x.namn + '=' + x.värde).join(', ');
+      syncStatus(`Servern har ${g.length} poster · ${graded} med värde · ${withId} med id`
+        + (sample ? ` · t.ex. ${sample}` : ''));
+    } catch (err) {
+      syncStatus('Ingen kontakt med servern.');
+    }
+  });
 
   if (syncKey()) syncNow(true);
   else syncStatus('Ingen nyckel angiven — synk av.');
