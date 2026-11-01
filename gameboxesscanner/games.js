@@ -9,7 +9,7 @@
 // editing one would silently write to the other. Ids are assigned once and
 // must be preserved whenever this file is regenerated.
 
-window.GAMES_VERSION = 'v48';
+window.GAMES_VERSION = 'v49';
 
 window.BOXES = [
   {id:"A", status:"full", förråd:"Kap 13"},
@@ -24,16 +24,16 @@ window.BOXES = [
   {id:"J1", status:"full", förråd:"Kap 13"},
   {id:"J2", status:null, förråd:"Kap 13"},
   {id:"K", status:"full", förråd:"Kap 13"},
-  {id:"L", status:"full", förråd:"Kap 13"},
+  {id:"L", status:"full", förråd:"Kap 16"},
   {id:"M", status:"full", förråd:"Kap 13"},
   {id:"N", status:null, förråd:"Kap 13"},
   {id:"O", status:"luft", förråd:"Kap 13"},
-  {id:"P", status:null, förråd:"Kap 13"},
-  {id:"Q", status:"luft", förråd:"Kap 13"},
+  {id:"P", status:null, förråd:"Kap 16"},
+  {id:"Q", status:"luft", förråd:"Kap 16"},
   {id:"R", status:"full", förråd:"Kap 13"},
   {id:"S", status:null, förråd:"Kap 13"},
   {id:"T", status:null, förråd:"Kap 13"},
-  {id:"U", status:null, förråd:"Kap 13"},
+  {id:"U", status:null, förråd:"Kap 16"},
   {id:"Garderob", status:null, förråd:"Kap 13"},
 ];
 
