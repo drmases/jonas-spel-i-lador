@@ -285,6 +285,13 @@
   }
   .toggle input { accent-color: var(--cyan); width: 15px; height: 15px; }
   .toggle:hover { color: var(--cyan); }
+
+  .form-msg {
+    margin-top: 12px; padding: 10px 13px; font-size: 12px;
+    letter-spacing: .06em; clip-path: var(--clip-sm);
+  }
+  .form-msg.ok    { background: rgba(34,211,238,.1);  color: var(--cyan);  border: 1px solid rgba(34,211,238,.4); }
+  .form-msg.error { background: rgba(245,158,11,.12); color: var(--amber); border: 1px solid rgba(245,158,11,.45); }
   #no-results {
     color: var(--muted); text-align: center; padding: 36px;
     font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
@@ -381,6 +388,7 @@
     <button class="btn" id="form-save">Spara</button>
     <button class="btn btn-secondary" id="form-clear" style="flex:0 0 40%">Rensa</button>
   </div>
+  <p id="form-msg" hidden></p>
 
   <hr class="divider">
   <div class="list-head">
@@ -867,12 +875,12 @@ document.getElementById('form-save').addEventListener('click', () => {
   const name = document.getElementById('form-name').value.trim();
   const box = document.getElementById('form-box').value;
   const value = Number(document.getElementById('form-value').value) || null;
-  if (!name || !box) { alert('Namn och låda krävs.'); return; }
+  if (!name || !box) { formMsg('Namn och låda krävs.', 'error'); return; }
   upsertOverride({ ean, namn: name, låda: box, värde: value });
   clearForm();
   renderAllGames();
   syncNow(true);
-  alert('Sparat!');
+  formMsg('Sparat: ' + name, 'ok');
 });
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
@@ -1102,6 +1110,16 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
     if (!list.contains(e.target) && e.target !== nameInput) hide();
   });
 })();
+
+let formMsgTimer = null;
+function formMsg(text, kind) {
+  const el = document.getElementById('form-msg');
+  el.textContent = text;
+  el.className = kind === 'error' ? 'form-msg error' : 'form-msg ok';
+  el.hidden = false;
+  clearTimeout(formMsgTimer);
+  formMsgTimer = setTimeout(() => { el.hidden = true; }, 2600);
+}
 
 function clearForm() {
   ['form-ean','form-name'].forEach(id => document.getElementById(id).value = '');
