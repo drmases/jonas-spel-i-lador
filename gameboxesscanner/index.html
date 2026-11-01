@@ -122,6 +122,8 @@
   .btn-secondary:hover { border-color: var(--cyan); box-shadow: 0 0 20px rgba(34,211,238,.2); }
   .btn-row { display: flex; gap: 10px; }
   .btn-row .btn { margin-top: 0; }
+  #form-delete { color: #f87171; border-color: rgba(248,113,113,.5); }
+  #form-delete:hover { border-color: #f87171; box-shadow: 0 0 18px rgba(248,113,113,.2); }
 
   /* Scanner */
   #reader, #live-reader { width: 100%; background: #000; }
@@ -431,7 +433,8 @@
   </div>
   <div class="btn-row" style="margin-top:16px">
     <button class="btn" id="form-save">Spara</button>
-    <button class="btn btn-secondary" id="form-clear" style="flex:0 0 40%">Rensa</button>
+    <button class="btn btn-secondary" id="form-clear">Rensa</button>
+    <button class="btn btn-secondary" id="form-delete">Radera</button>
   </div>
   <p id="form-msg" hidden></p>
 
@@ -458,7 +461,7 @@
 </nav>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="games.js?v=45"></script>
+<script src="games.js?v=46"></script>
 <script>
 // ── Data layer ──────────────────────────────────────────────────────────────
 const LS_KEY = 'gameboxes_overrides';
@@ -499,7 +502,7 @@ function allGames() {
       map.set(key, o);
     }
   });
-  return [...map.values()];
+  return [...map.values()].filter(g => !g.raderad);
 }
 
 // The same product can be written two ways: UPC-A prints 12 digits, while a
@@ -848,7 +851,7 @@ async function quickSave(ean) {
   const name = document.getElementById('quick-name').value.trim();
   const box = document.getElementById('quick-box').value;
   if (!name || !box) { alert('Fyll i namn och låda.'); return; }
-  await saveAndSync({ ean, namn: name, låda: box, värde: null }, name);
+  await saveAndSync({ ean, namn: name, låda: box, värde: null, raderad: false }, name);
   handleScanResult(ean);
 }
 
@@ -902,12 +905,28 @@ document.getElementById('form-save').addEventListener('click', async () => {
   const id = document.getElementById('form-id').value || null;
   if (!name || !box) { formMsg('Namn och låda krävs.', 'error'); return; }
   clearForm();
-  await saveAndSync({ id, ean, namn: name, låda: box, värde: value }, name);
+  await saveAndSync({ id, ean, namn: name, låda: box, värde: value, raderad: false }, name);
 });
 
 document.getElementById('form-clear').addEventListener('click', clearForm);
 
-const APP_VERSION = 'v45';
+document.getElementById('form-delete').addEventListener('click', async () => {
+  const id = document.getElementById('form-id').value || null;
+  const ean = document.getElementById('form-ean').value.trim() || null;
+  const name = document.getElementById('form-name').value.trim();
+  const box = document.getElementById('form-box').value;
+  if (!name) { formMsg('Välj ett spel att radera först.', 'error'); return; }
+  if (!confirm('Radera "' + name + '" ur samlingen?\n\nDet försvinner på alla dina enheter. '
+    + 'Lägger du till spelet igen med samma namn kommer det tillbaka.')) return;
+
+  // games.js is shared and static, so the game is marked deleted rather than
+  // removed; every client filters tombstones out.
+  const label = name;
+  clearForm();
+  await saveAndSync({ id, ean, namn: label, låda: box || 'Garderob', värde: null, raderad: true }, label, 'Raderat');
+});
+
+const APP_VERSION = 'v46';
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 // localStorage is per-device, so a code scanned on the phone never reached the
@@ -1053,6 +1072,7 @@ async function syncNow(quiet) {
       namn: String(g.namn),
       låda: String(g.låda),
       värde: g.värde ? Number(g.värde) : null,
+      raderad: !!g.raderad,
     };
     if (entry.ean) { upsertOverride(entry); return true; }
     const existing = loadOverrides();
@@ -1194,15 +1214,15 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
 })();
 
 let formMsgTimer = null;
-async function saveAndSync(entry, label) {
+async function saveAndSync(entry, label, verb) {
   upsertOverride(entry);
   renderAllGames();
   const r = await syncNow(true);
   if (r.ok) {
-    formMsg('Sparat och synkat: ' + label, 'ok');
+    formMsg((verb || 'Sparat') + ' och synkat: ' + label, 'ok');
   } else {
-    formMsg('Sparat lokalt — INTE på servern', 'error');
-    alert('Sparningen nådde inte servern.\n\n' + r.reason
+    formMsg((verb || 'Sparat') + ' lokalt — INTE på servern', 'error');
+    alert('Ändringen nådde inte servern.\n\n' + r.reason
       + '\n\nÄndringen ligger kvar på den här enheten och skickas upp '
       + 'nästa gång synken lyckas. Undvik att rensa lokal data innan dess.');
   }

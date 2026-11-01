@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['read'])) {
             'namn'  => (string)$g['namn'],
             'låda'  => (string)$g['låda'],
             'värde' => isset($g['värde']) ? $g['värde'] : null,
+            'raderad' => !empty($g['raderad']),
         ];
     }
     send(200, ['games' => $out, 'count' => count($out)]);
@@ -99,6 +100,10 @@ function clean($g) {
     $t = isset($g['t']) ? (int)$g['t'] : 0;
     if ($t < 0) $t = 0;
 
+    // games.js is static and shared, so a deleted game cannot simply vanish
+    // from it — the entry stays as a tombstone the clients filter out.
+    $raderad = !empty($g['raderad']);
+
     // Note: status is deliberately absent. Full/luft belongs to the box, not
     // the game, and lives in games.js — a stale copy here would overwrite it.
     return [
@@ -108,6 +113,7 @@ function clean($g) {
         'namn'  => cut($namn, 200),
         'låda'  => cut($lada, 20),
         'värde' => $varde,
+        'raderad' => $raderad,
     ];
 }
 
@@ -136,7 +142,7 @@ function absorb(&$entries, &$index, $c, $only) {
     } else {
         $existing = $entries[$hit];
         $newer = $c['t'] >= $existing['t'];
-        foreach (['id', 'ean', 'namn', 'låda', 'värde'] as $f) {
+        foreach (['id', 'ean', 'namn', 'låda', 'värde', 'raderad'] as $f) {
             if ($only !== null && !in_array($f, $only, true)) continue;
 
             // An identifier the stored entry lacks is always worth adopting:
@@ -198,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $c = clean($g);
         if (!$c) continue;
         $provided = array_values(array_filter(
-            ['id', 'ean', 'namn', 'låda', 'värde'],
+            ['id', 'ean', 'namn', 'låda', 'värde', 'raderad'],
             function ($f) use ($g) { return array_key_exists($f, $g); }
         ));
         absorb($entries, $index, $c, $provided);

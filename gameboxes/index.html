@@ -565,9 +565,12 @@ function applyServer(list){
     const k = g.n.toLowerCase();
     if (!byName.has(k)) byName.set(k, g);
   });
+  const removed = new Set();
   list.forEach(o => {
     const g = (o.id && byId.get(o.id)) || byName.get((o.namn||'').toLowerCase());
+    if (o.raderad) { if (g) removed.add(g); return; }
     if (g) {
+      removed.delete(g);
       if (o['låda']) g.b = o['låda'];
       g.v = o['värde'] != null ? o['värde'] : null;
     } else if (o.namn && o['låda']) {
@@ -576,6 +579,7 @@ function applyServer(list){
       byName.set(ng.n.toLowerCase(), ng);
     }
   });
+  if (removed.size) games = games.filter(g => !removed.has(g));
 }
 
 function setFilter(kind,value,btn){
