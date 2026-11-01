@@ -154,6 +154,11 @@
   .badge-full { background: rgba(245,158,11,.14); color: var(--amber); border: 1px solid rgba(245,158,11,.4); }
   .badge-luft { background: rgba(34,211,238,.12); color: var(--cyan); border: 1px solid rgba(34,211,238,.4); }
   .badge-null { background: rgba(21,49,77,.5); color: var(--muted); border: 1px solid var(--line); }
+  .badge-room { background: rgba(168,85,247,.14); color: var(--violet); border: 1px solid rgba(168,85,247,.45); }
+  .badge-v1 { background: rgba(21,49,77,.5);   color: var(--muted); border: 1px solid var(--line); }
+  .badge-v2 { background: rgba(34,211,238,.1); color: var(--cyan);  border: 1px solid rgba(34,211,238,.35); }
+  .badge-v3 { background: rgba(245,158,11,.16);color: var(--amber); border: 1px solid rgba(245,158,11,.45); }
+  .result-badges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 
   /* Unknown form */
   #unknown-form {
@@ -346,28 +351,16 @@
     <label>Låda</label>
     <select class="field" id="form-box">
       <option value="">Välj låda…</option>
-      <option value="A">Låda A</option>
-      <option value="B">Låda B</option>
-      <option value="C">Låda C</option>
-      <option value="D">Låda D</option>
-      <option value="E">Låda E</option>
-      <option value="F">Låda F</option>
-      <option value="G">Låda G</option>
-      <option value="H">Låda H</option>
-      <option value="I">Låda I</option>
-      <option value="J1">Låda J1</option>
-      <option value="J2">Låda J2</option>
-      <option value="K">Låda K</option>
-      <option value="L">Låda L</option>
-      <option value="M">Låda M</option>
-      <option value="N">Låda N</option>
-      <option value="O">Låda O</option>
-      <option value="P">Låda P</option>
-      <option value="Q">Låda Q</option>
-      <option value="R">Låda R</option>
-      <option value="S">Låda S</option>
-      <option value="T">Låda T</option>
-      <option value="Garderob">Garderob</option>
+      <!-- options are filled from window.BOXES -->
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Värde</label>
+    <select class="field" id="form-value">
+      <option value="">Ej satt</option>
+      <option value="1">1 — Lågt värde</option>
+      <option value="2">2 — Mellan</option>
+      <option value="3">3 — Högt värde</option>
     </select>
   </div>
   <div class="btn-row" style="margin-top:16px">
@@ -453,12 +446,12 @@ function allGames() {
     let found = false;
     // Match by EAN first
     if (o.ean) {
-      for (const [k, v] of map) { if (sameEan(v.ean, o.ean)) { map.set(k, {...v, ...o, status: v.status}); found = true; break; } }
+      for (const [k, v] of map) { if (sameEan(v.ean, o.ean)) { map.set(k, {...v, ...o}); found = true; break; } }
     }
     // Fall back to name match (handles adding EAN to a seed entry with ean:null)
     if (!found && o.namn) {
       for (const [k, v] of map) {
-        if (v.namn.toLowerCase() === o.namn.toLowerCase()) { map.set(k, {...v, ...o, status: v.status}); found = true; break; }
+        if (v.namn.toLowerCase() === o.namn.toLowerCase()) { map.set(k, {...v, ...o}); found = true; break; }
       }
     }
     if (!found) {
@@ -485,10 +478,11 @@ function sameEan(a, b) {
 
 // Full/luft describes the box, not the game in it. Read it off the box so a
 // game that moves cannot carry its old box's marking along.
-function boxStatus(låda) {
-  const g = (window.GAMES || []).find(x => x.låda === låda && x.status);
-  return g ? g.status : null;
+function boxOf(låda) {
+  return (window.BOXES || []).find(b => b.id === låda) || null;
 }
+function boxStatus(låda) { const b = boxOf(låda); return b ? b.status : null; }
+function boxRoom(låda)   { const b = boxOf(låda); return b ? b.förråd : null; }
 
 function findByEan(ean) {
   const overrides = loadOverrides();
@@ -515,8 +509,29 @@ function upsertOverride(game) {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+// Group the pickers by storage room: which room a box sits in matters as
+// much as the letter once the collection spans two of them.
+function boxOptionsHtml() {
+  const boxes = window.BOXES || [];
+  const rooms = [...new Set(boxes.map(b => b.förråd))];
+  return rooms.map(room =>
+    `<optgroup label="${room}">` +
+    boxes.filter(b => b.förråd === room)
+      .map(b => `<option value="${b.id}">${b.id === 'Garderob' ? 'Garderob' : 'Låda ' + b.id}</option>`)
+      .join('') +
+    '</optgroup>'
+  ).join('');
+}
+
 function boxLabel(låda) {
   return låda === 'Garderob' ? 'Garderob' : 'Låda ' + låda;
+}
+
+const VALUE_LABEL = {1:'Lågt värde', 2:'Mellan', 3:'Högt värde'};
+
+function valueBadge(v) {
+  if (!v) return '';
+  return `<span class="badge badge-v${v}" title="${VALUE_LABEL[v]}">Värde ${v}</span>`;
 }
 
 function statusBadge(status) {
@@ -528,7 +543,9 @@ function statusBadge(status) {
 
 function gameCard(g, showEdit = false) {
   const sub = g.ean ? `EAN: ${g.ean}` : '';
-  const badge = statusBadge(g.status);
+  const room = boxRoom(g.låda);
+  const badge = statusBadge(boxStatus(g.låda)) + valueBadge(g.värde)
+    + (room ? `<span class="badge badge-room">${room}</span>` : '');
   let btn = '';
   if (showEdit) {
     btn = `<button class="edit-btn" onclick="editGame(${JSON.stringify(g).replace(/"/g,'&quot;')})">Redigera</button>`;
@@ -553,6 +570,7 @@ window.addEan = function(g) {
   document.getElementById('form-ean').value = '';
   document.getElementById('form-name').value = g.namn;
   document.getElementById('form-box').value = g.låda || '';
+  document.getElementById('form-value').value = g.värde || '';
   document.getElementById('form-ean').focus();
   document.getElementById('form-ean').scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
@@ -739,8 +757,11 @@ function handleScanResult(ean) {
       <div class="result-card">
         <div class="result-box">${game.låda}</div>
         <div class="result-name">${game.namn}</div>
-        <div>${statusBadge(game.status) || '<span class="badge badge-null">Okänd status</span>'}</div>
-        <div style="margin-top:6px;font-size:13px;color:var(--muted)">${boxLabel(game.låda)}</div>
+        <div class="result-badges">${
+          (boxRoom(game.låda) ? `<span class="badge badge-room">${boxRoom(game.låda)}</span>` : '')
+          + statusBadge(boxStatus(game.låda)) + valueBadge(game.värde)
+        }</div>
+        <div style="margin-top:8px;font-size:13px;color:var(--muted)">${boxLabel(game.låda)}</div>
         <button class="btn" style="margin-top:20px" onclick="resumeScan()">Skanna igen</button>
       </div>`;
   } else {
@@ -758,8 +779,7 @@ function handleScanResult(ean) {
             <label>Låda</label>
             <select class="field" id="quick-box">
               <option value="">Välj låda…</option>
-              ${['A','B','C','D','E','F','G','H','I','J1','J2','K','L','M','N','O','P','Q','R','S','T','Garderob']
-                .map(b => `<option value="${b}">${b === 'Garderob' ? 'Garderob' : 'Låda ' + b}</option>`).join('')}
+              ${boxOptionsHtml()}
             </select>
           </div>
           <button class="btn" onclick="quickSave('${ean}')">Spara</button>
@@ -778,7 +798,7 @@ function quickSave(ean) {
   const name = document.getElementById('quick-name').value.trim();
   const box = document.getElementById('quick-box').value;
   if (!name || !box) { alert('Fyll i namn och låda.'); return; }
-  upsertOverride({ ean, namn: name, låda: box, status: boxStatus(box) });
+  upsertOverride({ ean, namn: name, låda: box, värde: null });
   syncNow(true);
   handleScanResult(ean);
 }
@@ -809,6 +829,7 @@ window.editGame = function(g) {
   document.getElementById('form-ean').value = g.ean || '';
   document.getElementById('form-name').value = g.namn || '';
   document.getElementById('form-box').value = g.låda || '';
+  document.getElementById('form-value').value = g.värde || '';
   // Switch to add tab
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -821,8 +842,9 @@ document.getElementById('form-save').addEventListener('click', () => {
   const ean = document.getElementById('form-ean').value.trim() || null;
   const name = document.getElementById('form-name').value.trim();
   const box = document.getElementById('form-box').value;
+  const value = Number(document.getElementById('form-value').value) || null;
   if (!name || !box) { alert('Namn och låda krävs.'); return; }
-  upsertOverride({ ean, namn: name, låda: box, status: boxStatus(box) });
+  upsertOverride({ ean, namn: name, låda: box, värde: value });
   clearForm();
   renderAllGames();
   syncNow(true);
@@ -917,7 +939,7 @@ async function syncNow(quiet) {
       ean: g.ean || null,
       namn: String(g.namn),
       låda: String(g.låda),
-      status: g.status || null,
+      värde: g.värde ? Number(g.värde) : null,
     };
     if (entry.ean) { upsertOverride(entry); return true; }
     const existing = loadOverrides();
@@ -1039,6 +1061,7 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
     const match = allGames().find(g => g.namn.toLowerCase() === val.toLowerCase());
     if (match) {
       document.getElementById('form-box').value = match.låda || '';
+    document.getElementById('form-value').value = match.värde || '';
       if (!document.getElementById('form-ean').value && match.ean) {
         document.getElementById('form-ean').value = match.ean;
       }
@@ -1059,6 +1082,7 @@ document.getElementById('clear-storage-btn').addEventListener('click', () => {
 function clearForm() {
   ['form-ean','form-name'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('form-box').value = '';
+  document.getElementById('form-value').value = '';
 }
 
 // Mini scan button in form — opens the live scanner in an overlay and drops
@@ -1092,6 +1116,7 @@ document.getElementById('form-scan-btn').addEventListener('click', async () => {
         if (game) {
           document.getElementById('form-name').value = game.namn;
           document.getElementById('form-box').value = game.låda;
+    document.getElementById('form-value').value = game.värde || '';
         }
         close();
       },
@@ -1112,6 +1137,7 @@ document.getElementById('form-scan-btn').addEventListener('click', async () => {
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('form-box').insertAdjacentHTML('beforeend', boxOptionsHtml());
 initScanner();
 renderAllGames();
 
