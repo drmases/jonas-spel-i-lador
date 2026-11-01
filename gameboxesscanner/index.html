@@ -962,6 +962,17 @@ async function syncNow(quiet) {
 
   if (syncKey()) syncNow(true);
   else syncStatus('Ingen nyckel angiven — synk av.');
+
+  // Sync happens on load and after a save, so a phone left open showed what
+  // it fetched last time. Fetch again when the app is brought back up,
+  // throttled so switching apps repeatedly does not hammer the server.
+  let lastSync = Date.now();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !syncKey()) return;
+    if (Date.now() - lastSync < 15000) return;
+    lastSync = Date.now();
+    syncNow(true);
+  });
 })();
 
 // ── Backup ────────────────────────────────────────────────────────────────────

@@ -118,9 +118,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $c = clean($g);
         if ($c) $map[entry_key($c)] = $c;
     }
+    // Overlay only the fields the client actually sent. Replacing the whole
+    // entry would let a device running older code wipe a value it never knew
+    // about — simply opening the app there would undo the grading.
     foreach ($incoming as $g) {
         $c = clean($g);
-        if ($c) $map[entry_key($c)] = $c;
+        if (!$c) continue;
+        $k = entry_key($c);
+        if (isset($map[$k])) {
+            $entry = $map[$k];
+            foreach (['id', 'ean', 'namn', 'låda', 'värde'] as $field) {
+                if (array_key_exists($field, $g)) $entry[$field] = $c[$field];
+            }
+            $map[$k] = $entry;
+        } else {
+            $map[$k] = $c;
+        }
     }
     $merged = array_values($map);
 
