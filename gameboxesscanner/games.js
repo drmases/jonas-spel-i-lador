@@ -9,7 +9,7 @@
 // editing one would silently write to the other. Ids are assigned once and
 // must be preserved whenever this file is regenerated.
 
-window.GAMES_VERSION = 'v51';
+window.GAMES_VERSION = 'v52';
 
 window.BOXES = [
   {id:"A", status:"full", förråd:"Kap 13"},
@@ -35,6 +35,7 @@ window.BOXES = [
   {id:"T", status:null, förråd:"Kap 13"},
   {id:"U", status:null, förråd:"Kap 16"},
   {id:"V", status:null, förråd:"Kap 13"},
+  {id:"W", status:null, förråd:"Kap 13"},
   {id:"Garderob", status:null, förråd:"Kap 13"},
 ];
 
