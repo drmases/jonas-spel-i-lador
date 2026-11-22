@@ -9,7 +9,7 @@
 // editing one would silently write to the other. Ids are assigned once and
 // must be preserved whenever this file is regenerated.
 
-window.GAMES_VERSION = 'v56';
+window.GAMES_VERSION = 'v57';
 
 window.BOXES = [
   {id:"A", status:"full", förråd:"Kap 13"},
@@ -36,7 +36,7 @@ window.BOXES = [
   {id:"U", status:null, förråd:"Kap 16"},
   {id:"V", status:null, förråd:"Kap 13"},
   {id:"W", status:null, förråd:"Kap 13"},
-  {id:"X", status:null, förråd:"Kap 13"},
+  {id:"X", status:null, förråd:"Kap 16"},
   {id:"Garderob", status:null, förråd:"Kap 13"},
 ];
 
@@ -258,7 +258,7 @@ window.GAMES = [
   {id:"g216", ean:null, namn:"Dominant Species", låda:"Garderob", värde:2},
   {id:"g217", ean:null, namn:"Archipelago", låda:"Garderob", värde:3},
   {id:"g218", ean:null, namn:"The Castles of Burgundy", låda:"Garderob", värde:3},
-  {id:"g219", ean:null, namn:"Roll Player", låda:"Garderob", värde:2},
+  {id:"g219", ean:null, namn:"Roll Player", låda:"X", värde:2},
   {id:"g220", ean:null, namn:"Wonderlands War", låda:"Garderob", värde:3},
   {id:"g221", ean:null, namn:"Sorcerer", låda:"Garderob", värde:3},
   {id:"g222", ean:null, namn:"Smartphone Inc.", låda:"V", värde:1},
@@ -267,7 +267,7 @@ window.GAMES = [
   {id:"g225", ean:null, namn:"Hamburg", låda:"Garderob", värde:3},
   {id:"g226", ean:"3558380057482", namn:"Tokyo Highway", låda:"L", värde:1},
   {id:"g227", ean:null, namn:"Septima", låda:"Garderob", värde:2},
-  {id:"g228", ean:null, namn:"Race to Moscow", låda:"Garderob", värde:3},
+  {id:"g228", ean:null, namn:"Race to Moscow", låda:"X", värde:3},
   {id:"g229", ean:null, namn:"Cuba Libre", låda:"Garderob", värde:2},
   {id:"g230", ean:null, namn:"The Thing: The Boardgame", låda:"V", värde:3},
   {id:"g231", ean:null, namn:"Jórvík", låda:"Garderob", värde:1},
