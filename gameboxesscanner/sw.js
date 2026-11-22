@@ -1,8 +1,8 @@
-const CACHE = 'gameboxesscanner-v53';
+const CACHE = 'gameboxesscanner-v54';
 const ASSETS = [
   '/gameboxesscanner/',
   '/gameboxesscanner/index.html',
-  '/gameboxesscanner/games.js?v=53',
+  '/gameboxesscanner/games.js?v=54',
   '/gameboxesscanner/manifest.json',
   'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
 ];
